@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
+
+	"oj/goforces/internal"
 )
 
 // TODO
@@ -24,7 +26,7 @@ func SignUpUser(username, password string) bool {
 		slog.Error(fmt.Sprintf("Error encypting the pass word =>   %v", err))
 		return false
 	}
-	user := User{Username: username, Password: string(pass)}
+	user := internal.User{Username: username, Password: string(pass)}
 	Error := SaveUserInDB(user)
 	if Error != nil {
 		slog.Error(fmt.Sprintf("Error in signing user up => %v", err))
@@ -34,10 +36,10 @@ func SignUpUser(username, password string) bool {
 }
 
 // TODO : Complete this function when the DB is ready
-func GetUserFromDB(username string) User {
-	return User{Username: "", Password: ""}
+func GetUserFromDB(username string) internal.User {
+	return internal.User{Username: "", Password: ""}
 }
-func SaveUserInDB(user User) error {
+func SaveUserInDB(user internal.User) error {
 	return nil
 
 }
