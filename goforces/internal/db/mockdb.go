@@ -4,9 +4,6 @@ import (
 	"sync"
 
 	"oj/goforces/internal"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/sirupsen/logrus"
 )
 
 
@@ -27,8 +24,6 @@ func NewMockDB() *MockDB {
 func (m *MockDB) GetUserSubmission(user internal.User) []internal.Submission {
 	m.mu.Lock()
 
-	logrus.Infof("Current => %s", spew.Sdump(m.submissions))
-	logrus.Infof("user => %+v", user)
 	var userSubmissions []internal.Submission
 
 	for _, submission := range m.submissions {
@@ -39,4 +34,13 @@ func (m *MockDB) GetUserSubmission(user internal.User) []internal.Submission {
 
 	m.mu.Unlock()
 	return userSubmissions
+}
+
+func (m *MockDB) AddSubmission(s internal.Submission) error {
+	m.mu.Lock()
+
+	m.submissions = append(m.submissions, &s)
+
+	m.mu.Unlock()
+	return nil
 }

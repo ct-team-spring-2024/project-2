@@ -16,10 +16,10 @@ const (
 )
 
 type Submission struct {
-	SubmissionId int64
-	UserId       int64
-	ProblemId    int64
-	Status       SubmissionStatus
+	SubmissionId int64            `json:"submission_id"`
+	UserId       int64            `json:"user_id"`
+	ProblemId    int64            `json:"problem_id"`
+	Status       SubmissionStatus `json:"status"`
 }
 
 func generateUniqueId() int {

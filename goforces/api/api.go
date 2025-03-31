@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"encoding/json"
 	"oj/goforces/internal"
 	"oj/goforces/internal/db"
 	"oj/goforces/internal/submission"
@@ -22,13 +23,35 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 // TODO: should return the value in the http response
 func GetUserSubmission(w http.ResponseWriter, r *http.Request) {
 	u := internal.NewUser(1, "u1", "p1")
-	result := submission.GetUserSubmission(DB, *u)
-	logrus.Infof("result => %v", result)
+	submissions := submission.GetUserSubmission(DB, *u)
+	logrus.Infof("All user submissions => %+v", submissions)
+
+	w.Header().Set("Content-Type", "application/json")
+	if len(submissions) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"message": "No submissions found"}`))
+		return
+	}
+	if err := json.NewEncoder(w).Encode(submissions); err != nil {
+		logrus.Errorf("Failed to encode submissions to JSON: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}
+
+func AddSubmission(w http.ResponseWriter, r *http.Request) {
+	s := internal.NewSubmission(1, 100)
+	err := submission.AddSubmission(DB, *s)
+	if err != nil {
+		logrus.Fatalf("Err => %v", err)
+	}
+	logrus.Info("Submit added successfully")
 }
 
 func SetupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/hello", helloWorld)
 	mux.HandleFunc("/user-submission", GetUserSubmission)
+	mux.HandleFunc("/add-submission", AddSubmission)
 	return mux
 }

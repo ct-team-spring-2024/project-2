@@ -6,4 +6,5 @@ import (
 
 type Database interface {
 	GetUserSubmission(internal.User) []internal.Submission
+	AddSubmission(internal.Submission) error
 }
