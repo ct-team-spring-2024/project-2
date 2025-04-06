@@ -3,7 +3,8 @@ package evaluator
 import "time"
 
 type Result struct {
-
+	Output string
+	Error  error
 }
 
 type Evaluator interface {
