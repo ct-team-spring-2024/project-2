@@ -10,7 +10,7 @@ import (
 
 
 // TODO the "goforces" is the judge in the serve mode
-//      and this package is the judge in the code-runner mode
+//      and "judge" is the judge in the code-runner mode
 func main() {
 	logger := logrus.New()
 	logger.SetLevel(logrus.DebugLevel)
