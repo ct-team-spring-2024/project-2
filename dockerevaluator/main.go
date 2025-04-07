@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -35,6 +34,11 @@ func readTimeout(configFile string) (int, error) {
 }
 
 func main() {
+	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetFormatter(&logrus.TextFormatter{})
+
+	logrus.Debug("This is a debug message")
+
 	// Step 1: Read the timeout value from the config file
 	configFile := "config.txt"
 	timeout, err := readTimeout(configFile)
@@ -45,6 +49,7 @@ func main() {
 
 	// Step 2: Get all input files from the "inputs" directory
 	inputDir := "inputs"
+	outputDir := "outputs"
 	inputFiles, err := filepath.Glob(filepath.Join(inputDir, "*.txt"))
 	if err != nil {
 		fmt.Println("Error reading input files:", err)
@@ -52,33 +57,33 @@ func main() {
 	}
 
 	// Step 3: Process each input file
+	logrus.Infof("inputFiles => %v", inputFiles)
 	for _, inputFile := range inputFiles {
 		// Extract the file ID (e.g., "1.txt" -> "1")
 		fileID := strings.TrimSuffix(filepath.Base(inputFile), ".txt")
+		outputFile := fmt.Sprintf("%s/out_%s.txt", outputDir, fileID)
 		logrus.Infof("starting input file %s", fileID)
-		// Redirect stdin to the current input file
+
+		// reconfigure stdin and stdout
 		stdinFile, err := os.Open(inputFile)
 		if err != nil {
 			logrus.Errorf("Error opening file %s: %v", inputFile, err)
 			continue
 		}
 		defer stdinFile.Close()
-
-		// Redirect os.Stdin to the opened file
 		oldStdin := os.Stdin
 		os.Stdin = stdinFile
-		defer func() { os.Stdin = oldStdin }() // Restore original stdin later
+		defer func() { os.Stdin = oldStdin }()
 
-		// Capture stdout for the run function
-		r, w, err := os.Pipe()
+		stdoutFile, err := os.Create(outputFile)
 		if err != nil {
-			fmt.Printf("Error creating pipe for file %s: %v\n", inputFile, err)
+			logrus.Errorf("Error opening file %s: %v", outputFile, err)
 			continue
 		}
-
-		// Save the original stdout and restore it later
+		defer stdoutFile.Close()
 		oldStdout := os.Stdout
-		os.Stdout = w
+		os.Stdout = stdoutFile
+		defer func() { os.Stdout = oldStdout }()
 
 		// Run the function with a timeout
 		done := make(chan bool)
@@ -86,24 +91,11 @@ func main() {
 			run()
 			done <- true
 		}()
-
-		logrus.Infof("starting input file %s #2", fileID)
 		select {
 		case <-done:
-			// Function completed within the timeout
-			w.Close()
-			os.Stdout = oldStdout
-
-			// Read the captured stdout
-			var output strings.Builder
-			io.Copy(&output, r)
-			fmt.Printf("Output for file %s:\n%s\n", fileID, output.String())
-
+			logrus.Infof("Successfully executed %s", fileID)
 		case <-time.After(time.Duration(timeout) * time.Millisecond):
-			// Timeout occurred
-			logrus.Infof("Timeout for file %s\n", fileID)
-			w.Close()
-			os.Stdout = oldStdout
+			logrus.Infof("Timeout for file %s", fileID)
 		}
 		logrus.Infof("starting input file %s #3", fileID)
 	}

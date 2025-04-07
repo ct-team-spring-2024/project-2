@@ -8,8 +8,6 @@ import (
 
 	"strconv"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 func run() {
@@ -18,7 +16,7 @@ func run() {
 
 	line := strings.TrimSpace(scanner.Text())
 	parts := strings.Split(line, " ")
-	logrus.Infof("KIR ?%v", parts)
+	fmt.Printf("KIR ?%v\n", parts)
 
 
 	num1, _ := strconv.Atoi(parts[0])
@@ -26,6 +24,6 @@ func run() {
 
 	sum := num1 + num2
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 	fmt.Printf("Sum: %d\n", sum)
 }

@@ -1,12 +1,14 @@
 package api
 
 import (
-	"net/http"
-	"io"
 	"encoding/json"
+	"io"
+	"net/http"
 	"time"
 
 	"oj/judge/internal/evaluator"
+
+	"github.com/sirupsen/logrus"
 )
 
 var Eval evaluator.Evaluator
@@ -47,7 +49,8 @@ func EvalCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Simulate code evaluation with a timeout
-	_, outputs := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs, time.Duration(evalRequest.Timeout))
+	result, outputs := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs, time.Duration(evalRequest.Timeout) * time.Millisecond)
+	logrus.Infof("result and outputs => %v %v", result, outputs)
 
 	// Respond with the result
 	w.Header().Set("Content-Type", "application/json")
