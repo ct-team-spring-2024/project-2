@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -35,6 +36,15 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Du
 	defer os.RemoveAll(inputTempDir)
 	// defer os.RemoveAll(outputTempDir)
 
+	userCodeFolderPath, err := os.MkdirTemp("", "usercode")
+	userCodeFilePath := fmt.Sprintf("%s/usercode.go", userCodeFolderPath) // Create usercode.go in the current directory
+	code = strings.Replace(code, "func main()", "func run()", 1) // Replace func main() with func run()
+	err = os.WriteFile(userCodeFilePath, []byte(code), 0644)
+	if err != nil {
+		return Result{Error: fmt.Errorf("failed to write usercode.go: %v", err)}, nil
+	}
+	defer os.RemoveAll(userCodeFolderPath)
+
 	// Step 2: Create input files in the temporary directory
 	for i, input := range inputs {
 		filePath := filepath.Join(inputTempDir, fmt.Sprintf("%d.txt", i+1))
@@ -54,13 +64,15 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Du
 	imageName := "dockerevaluator"
 
 	// Define the container configuration
+	logrus.Infof("KKK %s", userCodeFilePath)
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
-		Cmd:   []string{"./main"},
+		Cmd:   []string{"go", "run", "main.go", "usercode.go"},
 	}, &container.HostConfig{
 		Binds: []string{
-			fmt.Sprintf("%s:/root/inputs", inputTempDir),
-			fmt.Sprintf("%s:/root/outputs", outputTempDir),
+			fmt.Sprintf("%s:/app/inputs", inputTempDir),
+			fmt.Sprintf("%s:/app/outputs", outputTempDir),
+			fmt.Sprintf("%s:/app/usercode.go", userCodeFilePath),
 		}, // Mount the inputs folder
 	}, nil, nil, "")
 	if err != nil {

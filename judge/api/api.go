@@ -50,7 +50,7 @@ func EvalCode(w http.ResponseWriter, r *http.Request) {
 
 	// Simulate code evaluation with a timeout
 	result, outputs := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs, time.Duration(evalRequest.Timeout) * time.Millisecond)
-	logrus.Infof("result and outputs => %v %v", result, outputs)
+	logrus.Infof("result and outputs => %+v \n %+v", result, outputs)
 
 	// Respond with the result
 	w.Header().Set("Content-Type", "application/json")
