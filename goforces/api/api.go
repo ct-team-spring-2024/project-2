@@ -1,10 +1,12 @@
 package api
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 	"oj/goforces/internal"
+	"oj/goforces/internal/controllers"
 	"oj/goforces/internal/db"
+	"oj/goforces/internal/middlewares"
 	"oj/goforces/internal/submission"
 
 	"github.com/sirupsen/logrus"
@@ -53,5 +55,11 @@ func SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("/hello", helloWorld)
 	mux.HandleFunc("/user-submission", GetUserSubmission)
 	mux.HandleFunc("/add-submission", AddSubmission)
+
+	mux.HandleFunc("/register", controllers.Register)
+	mux.HandleFunc("/login", controllers.Login)
+
+	mux.Handle("/profile", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetProfile)))
+	mux.Handle("/profile/update", middlewares.AuthMiddleware(http.HandlerFunc(controllers.UpdateProfile)))
 	return mux
 }
