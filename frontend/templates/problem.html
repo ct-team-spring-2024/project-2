@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ .Title }}</title>
+        <link rel="stylesheet" href="/static/problem_style.css">
+    </head>
+    <body>
+
+        <div class="container">
+
+            <!-- Problem Header -->
+            <header class="problem-header">
+                <h1>{{ .Title }}</h1>
+                <p><strong>Problem ID:</strong> {{ .Id }}</p>
+                <p><strong>Problem Name:</strong> {{ .ProblemName }}</p>
+            </header>
+
+            <!-- Problem Details -->
+            <section class="problem-details">
+                <h2>Problem Statement</h2>
+                <div class="statement">
+                    <p>{{ .Statement }}</p>
+                </div>
+
+                <h2>Constraints</h2>
+                <div class="constraints">
+                    <p><strong>Time Limit:</strong> {{ .TimeLimit }}</p>
+                    <p><strong>Memory Limit:</strong> {{ .MemoryLimit }}</p>
+                </div>
+            </section>
+
+        </div>
+
+    </body>
+</html>

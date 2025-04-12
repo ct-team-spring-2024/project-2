@@ -5,6 +5,8 @@ type Problem struct {
 	Statement   string
 	Title       string
 	ProblemName string
+	TimeLimit   string
+	MemoryLimit string
 }
 
 type Submission struct {

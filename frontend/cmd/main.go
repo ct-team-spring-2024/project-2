@@ -151,7 +151,56 @@ func main() {
 		c.HTML(http.StatusOK, "problems.html", pageData)
 	})
 
+	router.GET("/problem/:id", func(c *gin.Context) {
+		// Extract the problem ID from the URL
+		idStr := c.Param("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil || id <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid problem ID"})
+			return
+		}
+
+		// Fetch the problem details
+		problem, err := getProblemByID(id)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Problem not found"})
+			return
+		}
+
+		// Render the problem.html template with the problem data
+		c.HTML(http.StatusOK, "problem.html", problem)
+	})
+
 	router.Run(":8080")
+}
+
+func getProblemByID(id int) (*frontend.Problem, error) {
+	// Simulate a database lookup
+	mockProblems := map[int]frontend.Problem{
+		1000: {
+			Id:          1000,
+			Title:       "Sorting Algorithm",
+			ProblemName: "Sort the Array",
+			Statement:   "Given an array of integers, sort the array in ascending order.",
+			TimeLimit:   "2 seconds",
+			MemoryLimit: "256 MB",
+		},
+		1001: {
+			Id:          1001,
+			Title:       "Binary Search",
+			ProblemName: "Find the Element",
+			Statement:   "Given a sorted array and a target value, find the index of the target using binary search.",
+			TimeLimit:   "1 second",
+			MemoryLimit: "128 MB",
+		},
+	}
+
+	problem, exists := mockProblems[id]
+	if !exists {
+		problem = mockProblems[1000]
+		// return nil, fmt.Errorf("problem not found")
+	}
+	return &problem, nil
 }
 
 func getProblems(pageNumber int, limit int) []frontend.Problem {
