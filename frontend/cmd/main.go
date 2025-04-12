@@ -17,6 +17,8 @@ import (
 )
 
 var store = sessions.NewCookieStore([]byte("a-very-secret-key"))
+// var path = "C:/Users/Asus/Documents/GitHub/project-2"
+var path = "/home/mbroughani81/Documents/test/computer-technology-project-2"
 
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
@@ -33,8 +35,8 @@ func main() {
 		"pageRange": pageRange,
 	})
 
-	router.LoadHTMLGlob("C:/Users/Asus/Documents/GitHub/project-2/frontend/templates/*")
-	router.Static("/static", "C:/Users/Asus/Documents/GitHub/project-2/frontend/static")
+	router.LoadHTMLGlob(fmt.Sprintf("%s/frontend/templates/*", path))
+	router.Static("/static", fmt.Sprintf("%s/frontend/static", path))
 
 	// router.GET("/", func(c *gin.Context) {
 	//	c.HTML(http.StatusOK, "index.html", nil)
