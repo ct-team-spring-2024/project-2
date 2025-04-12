@@ -100,22 +100,22 @@
 
   <div class="pagination">
    {{if gt .CurrentPage 1}}
-     <a href="/problems.html?page={{minus .CurrentPage 1}}&limit={{.Limit}}">&laquo; Previous</a>
+     <a href="/problems?page={{minus .CurrentPage 1}}&limit={{.Limit}}">&laquo; Previous</a>
    {{end}}
- 
+
    {{range $i := pageRange .CurrentPage .TotalPages}}
      {{if eq $.CurrentPage $i}}
        <span class="page-number active">{{$i}}</span>
      {{else}}
-       <a class="page-number" href="/problems.html?page={{$i}}&limit={{$.Limit}}">{{$i}}</a>
+       <a class="page-number" href="/problems?page={{$i}}&limit={{$.Limit}}">{{$i}}</a>
      {{end}}
    {{end}}
- 
+
    {{if .HasNextPage}}
-     <a href="/problems.html?page={{add .CurrentPage 1}}&limit={{.Limit}}">Next &raquo;</a>
+     <a href="/problems?page={{add .CurrentPage 1}}&limit={{.Limit}}">Next &raquo;</a>
    {{end}}
  </div>
- 
+
 
 </body>
 </html>

@@ -2,21 +2,21 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"time"
-	//"github.com/golang-jwt/jwt/v5"
-	"html/template"
-	"net/http"
-	"oj/frontend"
-	"strconv"
-
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
+
+	"oj/frontend"
 )
 
 var store = sessions.NewCookieStore([]byte("a-very-secret-key"))
+
 // var path = "C:/Users/Asus/Documents/GitHub/project-2"
 var path = "/home/mbroughani81/Documents/test/computer-technology-project-2"
 
@@ -28,7 +28,6 @@ func main() {
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	//router.LoadHTMLGlob("templates/*")
 	router.SetFuncMap(template.FuncMap{
 		"add":       func(a, b int) int { return a + b },
 		"minus":     func(a, b int) int { return a - b },
@@ -38,17 +37,82 @@ func main() {
 	router.LoadHTMLGlob(fmt.Sprintf("%s/frontend/templates/*", path))
 	router.Static("/static", fmt.Sprintf("%s/frontend/static", path))
 
-	// router.GET("/", func(c *gin.Context) {
-	//	c.HTML(http.StatusOK, "index.html", nil)
-	// })
 	//Log in page
-	router.GET("/", func(c *gin.Context) {
+	router.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
+	router.POST("/login", func(c *gin.Context) {
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+		if username == "username" && password == "password" {
+			session, _ := store.Get(c.Request, "session-name")
+			session.Values["username"] = username
+			tokenString := createToken()
+			session.Values["jwt"] = tokenString
+			session.Save(c.Request, c.Writer)
+			c.Redirect(http.StatusSeeOther, "/profile")
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid credentials"})
+		}
+	})
 
-	//Problems page
+	router.GET("/profile", func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		jwtToken, ok := session.Values["jwt"].(string)
+		if !ok || jwtToken == "" {
+			c.Redirect(http.StatusSeeOther, "/login")
+			return
+		}
 
-	router.GET("/problems.html", func(c *gin.Context) {
+		claims := &MyCustomClaims{}
+		token, err := jwt.ParseWithClaims(jwtToken, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte("secret-key"), nil
+		})
+		if err != nil || !token.Valid {
+			c.Redirect(http.StatusSeeOther, "/login")
+			return
+		}
+
+		username, ok := session.Values["username"].(string)
+		if !ok || username == "" {
+			c.Redirect(http.StatusSeeOther, "/login")
+			return
+		}
+		paged := []frontend.Submission{
+			{
+				ProblemName:    "Sorting Algorithm",
+				Status:         "Accepted",
+				SubmissionDate: "2023-09-01",
+			},
+			{
+				ProblemName:    "Binary Search",
+				Status:         "Wrong Answer",
+				SubmissionDate: "2023-09-02",
+			},
+			{
+				ProblemName:    "Linked List Manipulation",
+				Status:         "Accepted",
+				SubmissionDate: "2023-09-03",
+			},
+		}
+
+		pageData := frontend.PageData{
+			Submissions:      paged,
+			CurrentPage:      1,
+			Limit:            10,
+			HasNextPage:      true,
+			TotalPages:       5,
+			Username:         "JohnDoe",
+			Email:            "johndoe@example.com",
+			MemberSince:      "January 2023",
+			TotalSubmissions: 50,
+			SolvedProblems:   30,
+			SolveRate:        60,
+}
+		c.HTML(http.StatusOK, "profile.html", pageData)
+	})
+
+	router.GET("/problems", func(c *gin.Context) {
 		pageNo := c.DefaultQuery("page", "1")
 		limitNo := c.DefaultQuery("limit", "20")
 		authenticate(c)
@@ -73,43 +137,23 @@ func main() {
 		if end > total {
 			end = total
 		}
+
 		paged := allProblems[start:end]
-		pageData := frontend.PageData{
+		pageData := frontend.ProblemsPageData{
 			Problems:    paged,
 			CurrentPage: page,
 			Limit:       limit,
 			HasNextPage: page < totalPages,
 			TotalPages:  totalPages,
 		}
+
 		fmt.Println("came here")
 		c.HTML(http.StatusOK, "problems.html", pageData)
-
 	})
-	router.POST("/login", func(c *gin.Context) {
-		username := c.PostForm("username")
-		password := c.PostForm("password")
-		if username == "" {
-			logrus.Error("Error : username is empty")
-		}
-		if username == "username" && password == "password" {
-			session, _ := store.Get(c.Request, "session-name")
-			session.Values["username"] = username
-			//TODO : add JWT to tokens for better security
 
-			tokenString := createToken()
-
-			session.Values["jwt"] = tokenString
-
-			session.Save(c.Request, c.Writer)
-
-			c.HTML(http.StatusOK, "user_page.html", nil)
-		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid credentials"})
-		}
-
-	})
 	router.Run(":8080")
 }
+
 func getProblems(pageNumber int, limit int) []frontend.Problem {
 	//Complete after DB
 	var problems = make([]frontend.Problem, 0)
@@ -140,8 +184,7 @@ func pageRange(current, total int) []int {
 func createToken() string {
 	claims := MyCustomClaims{
 		UserID: 123,
-
-		Role: "admin",
+		Role:   "admin",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
