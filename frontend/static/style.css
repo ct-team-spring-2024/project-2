@@ -14,7 +14,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 120vh;
 }
 
 article {
@@ -67,3 +67,4 @@ button.log-in-button {
 button.log-in-button:hover {
   background-color: #148b8b;
 }
+

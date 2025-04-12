@@ -9,17 +9,18 @@
 <body>
    <div class="container">
       <article>
-         <form action="/url" method="GET">
+         <form action="/login" method="POST">
          <p>
-            Please enter your usename and password
-            <input type="text" placeholder="Username" class ="Username">
-            <input type="text" placeholder="Password" class="password">
+            Please enter your username and password
          </p>
+            <p>
+            <input type="text" name="username" placeholder="Username" class ="Username">
+            <input type="password" name="password" placeholder="Password" class="password">
+            </p>
          <p>
          </p>
-         </form>
-         <button type="button" class="log-in-button">Log in</button>
-
+         <button type="submit" class="log-in-button">Log in</button>
+      </form>
       </article>
    </div>
 

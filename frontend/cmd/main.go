@@ -1,14 +1,22 @@
 package main
 
 import (
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"time"
+	//"github.com/golang-jwt/jwt/v5"
 	"html/template"
 	"net/http"
 	"oj/frontend"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 )
+
+var store = sessions.NewCookieStore([]byte("a-very-secret-key"))
 
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
@@ -32,12 +40,8 @@ func main() {
 	//	c.HTML(http.StatusOK, "index.html", nil)
 	// })
 	//Log in page
-	cnt := 0
 	router.GET("/", func(c *gin.Context) {
-		cnt = cnt + 1
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"counter": cnt,
-		})
+		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
 	//Problems page
@@ -45,6 +49,10 @@ func main() {
 	router.GET("/problems.html", func(c *gin.Context) {
 		pageNo := c.DefaultQuery("page", "1")
 		limitNo := c.DefaultQuery("limit", "20")
+		authenticate(c)
+		fmt.Println("canme here")
+		tokensring, _ := store.Get(c.Request, "session-name")
+		fmt.Println(tokensring)
 
 		page, _ := strconv.Atoi(pageNo)
 		limit, _ := strconv.Atoi(limitNo)
@@ -71,10 +79,33 @@ func main() {
 			HasNextPage: page < totalPages,
 			TotalPages:  totalPages,
 		}
+		fmt.Println("came here")
 		c.HTML(http.StatusOK, "problems.html", pageData)
 
 	})
+	router.POST("/login", func(c *gin.Context) {
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+		if username == "" {
+			logrus.Error("Error : username is empty")
+		}
+		if username == "username" && password == "password" {
+			session, _ := store.Get(c.Request, "session-name")
+			session.Values["username"] = username
+			//TODO : add JWT to tokens for better security
 
+			tokenString := createToken()
+
+			session.Values["jwt"] = tokenString
+
+			session.Save(c.Request, c.Writer)
+
+			c.HTML(http.StatusOK, "user_page.html", nil)
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid credentials"})
+		}
+
+	})
 	router.Run(":8080")
 }
 func getProblems(pageNumber int, limit int) []frontend.Problem {
@@ -103,4 +134,51 @@ func pageRange(current, total int) []int {
 		pages = append(pages, i)
 	}
 	return pages
+}
+func createToken() string {
+	claims := MyCustomClaims{
+		UserID: 123,
+
+		Role: "admin",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Subject:   "123", // typically user ID
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString([]byte("secret-key"))
+	return tokenString
+}
+
+func authenticate(c *gin.Context) bool {
+	session, _ := store.Get(c.Request, "session-name")
+	jwtToken, ok := session.Values["jwt"].(string)
+
+	if !ok || jwtToken == "" {
+		// http.Redirect(w, r, "/login", http.StatusFound)
+		fmt.Println("came here1")
+		return false
+	}
+
+	// optionally validate the JWT if needed
+	claims := &MyCustomClaims{}
+	_, err := jwt.ParseWithClaims(jwtToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret-key"), nil
+
+	})
+	if err != nil {
+		http.Redirect(c.Writer, c.Request, "/index.html", http.StatusFound)
+
+		return false
+
+	}
+	return true
+}
+
+type MyCustomClaims struct {
+	UserID               int    `json:"user_id"`
+	Email                string `json:"email"`
+	Role                 string `json:"role"`
+	jwt.RegisteredClaims        // include standard claims like exp, iat, sub
 }
