@@ -7,6 +7,7 @@ type Problem struct {
 	ProblemName string
 	TimeLimit   string
 	MemoryLimit string
+	Status      string
 }
 
 type Submission struct {
@@ -16,6 +17,8 @@ type Submission struct {
 }
 
 type ProfilePageData struct {
+	Page             string
+	ClientUsername   string
 	IsClientAdmin    bool
 	IsUserAdmin      bool
 	Submissions      []Submission
@@ -32,9 +35,12 @@ type ProfilePageData struct {
 }
 
 type ProblemsPageData struct {
-	Problems    []Problem
-	CurrentPage int
-	Limit       int
-	HasNextPage bool
-	TotalPages  int
+	Page           string
+	ClientUsername string
+	IsClientAdmin  bool
+	Problems       []Problem
+	CurrentPage    int
+	Limit          int
+	HasNextPage    bool
+	TotalPages     int
 }

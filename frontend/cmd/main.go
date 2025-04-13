@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
+
 	"strconv"
 	"time"
 
+	ppath "path"
+
+	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/sessions"
@@ -26,16 +29,17 @@ func main() {
 
 	logrus.Debug("This is a debug message")
 
-	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	router.SetFuncMap(template.FuncMap{
-		"add":       func(a, b int) int { return a + b },
-		"minus":     func(a, b int) int { return a - b },
-		"pageRange": pageRange,
-	})
+	router.HTMLRender = ginview.Default()
 
-	router.LoadHTMLGlob(fmt.Sprintf("%s/frontend/templates/*", path))
-	router.Static("/static", fmt.Sprintf("%s/frontend/static", path))
+	staticPath := fmt.Sprintf("%s/static", ppath.Base("."))
+	router.Static("/static", staticPath)
+
+	// router.SetFuncMap(template.FuncMap{
+	//	"add":       func(a, b int) int { return a + b },
+	//	"minus":     func(a, b int) int { return a - b },
+	//	"pageRange": pageRange,
+	// })
 
 	//Log in page
 	router.GET("/login", func(c *gin.Context) {
@@ -60,8 +64,8 @@ func main() {
 
 	router.GET("/profile/:username", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
 		username := c.Param("username")
-		clientUsername := session.Values["username"]
 		logrus.Infof("clientUsername => %s", clientUsername)
 		logrus.Infof("username => %s", username)
 
@@ -84,6 +88,8 @@ func main() {
 		}
 
 		pageData := frontend.ProfilePageData{
+			Page:             "profile",
+			ClientUsername:   clientUsername,
 			IsClientAdmin:    clientUsername == "admin",
 			IsUserAdmin:      username == "admin",
 			Submissions:      submissions,
@@ -98,10 +104,12 @@ func main() {
 			SolvedProblems:   30,
 			SolveRate:        60,
 		}
-		c.HTML(http.StatusOK, "profile.html", pageData)
+		c.HTML(http.StatusOK, "profile", pageData)
 	})
 
 	router.GET("/problems", func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
 		pageNo := c.DefaultQuery("page", "1")
 		limitNo := c.DefaultQuery("limit", "20")
 		authenticate(c)
@@ -128,16 +136,20 @@ func main() {
 		}
 
 		paged := allProblems[start:end]
+		logrus.Infof("paged %+v", paged)
 		pageData := frontend.ProblemsPageData{
-			Problems:    paged,
-			CurrentPage: page,
-			Limit:       limit,
-			HasNextPage: page < totalPages,
-			TotalPages:  totalPages,
+			Page:           "problems",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			Problems:       paged,
+			CurrentPage:    page,
+			Limit:          limit,
+			HasNextPage:    page < totalPages,
+			TotalPages:     totalPages,
 		}
 
 		fmt.Println("came here")
-		c.HTML(http.StatusOK, "problems.html", pageData)
+		c.HTML(http.StatusOK, "problems", pageData)
 	})
 
 	router.GET("/problem/:id", func(c *gin.Context) {

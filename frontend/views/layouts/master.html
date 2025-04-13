@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ template "title" . }}</title>
+        <link rel="stylesheet" href="/static/global_style.css">
+        {{ if eq .Page "profile" }}
+        <link rel="stylesheet" href="/static/profile_style.css">
+        {{ end }}
+        {{ if eq .Page "problems" }}
+        <link rel="stylesheet" href="/static/problems_style.css">
+        {{ end }}
+        {{ if eq .Page "problem" }}
+        <link rel="stylesheet" href="/static/problem_style.css">
+        {{ end }}
+    </head>
+    <body>
+        <!-- Header Section -->
+        <header class="site-header">
+            <nav>
+                <ul>
+                    <li><a href="/profile/{{ .ClientUsername }}">My Profile</a></li>
+                    <li><a href="/problems">Published Problems</a></li>
+                    <li><a href="/add-problem">Add Problem</a></li>
+                    <li>
+                        {{ if .IsClientAdmin }}
+                        <a href="/manage-problems">Manage Problems</a>
+                        {{ else }}
+                        <a href="/my-problems">My Problems</a>
+                        {{ end }}
+                    </li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            {{ template "content" . }}
+        </main>
+
+        <!-- Footer Section -->
+        <footer class="site-footer">
+            <p>&copy; 2025 My Website. All rights reserved.</p>
+        </footer>
+    </body>
+</html>
