@@ -49,6 +49,33 @@ section {
    margin: 5px 0;
 }
 
+/* Role Button Styles */
+.role-button {
+   margin-top: 15px;
+   text-align: center;
+}
+
+.role-button button {
+   padding: 10px 20px;
+   font-size: 16px;
+   font-weight: bold;
+   color: #fff;
+   background-color: #007bff;
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+   transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.role-button button:hover {
+   background-color: #0056b3;
+   transform: scale(1.05);
+}
+
+.role-button button:active {
+   transform: scale(0.95);
+}
+
 /* Section 2: Overall Statistics */
 .statistics {
    padding: 20px;

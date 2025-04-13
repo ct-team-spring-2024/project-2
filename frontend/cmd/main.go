@@ -43,42 +43,29 @@ func main() {
 	})
 	router.POST("/login", func(c *gin.Context) {
 		username := c.PostForm("username")
-		password := c.PostForm("password")
-		if username == "username" && password == "password" {
+		// password := c.PostForm("password")
+		// if username == "username" && password == "password" {
+		if true {
+			// TODO: jwt Token needs to be generated in the goforces
 			session, _ := store.Get(c.Request, "session-name")
-			session.Values["username"] = username
 			tokenString := createToken()
+			session.Values["username"] = username
 			session.Values["jwt"] = tokenString
 			session.Save(c.Request, c.Writer)
-			c.Redirect(http.StatusSeeOther, "/profile")
+			c.Redirect(http.StatusSeeOther, fmt.Sprintf("/profile/%s", username))
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid credentials"})
 		}
 	})
 
-	router.GET("/profile", func(c *gin.Context) {
+	router.GET("/profile/:username", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "session-name")
-		jwtToken, ok := session.Values["jwt"].(string)
-		if !ok || jwtToken == "" {
-			c.Redirect(http.StatusSeeOther, "/login")
-			return
-		}
+		username := c.Param("username")
+		clientUsername := session.Values["username"]
+		logrus.Infof("clientUsername => %s", clientUsername)
+		logrus.Infof("username => %s", username)
 
-		claims := &MyCustomClaims{}
-		token, err := jwt.ParseWithClaims(jwtToken, claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte("secret-key"), nil
-		})
-		if err != nil || !token.Valid {
-			c.Redirect(http.StatusSeeOther, "/login")
-			return
-		}
-
-		username, ok := session.Values["username"].(string)
-		if !ok || username == "" {
-			c.Redirect(http.StatusSeeOther, "/login")
-			return
-		}
-		paged := []frontend.Submission{
+		submissions := []frontend.Submission{
 			{
 				ProblemName:    "Sorting Algorithm",
 				Status:         "Accepted",
@@ -96,19 +83,21 @@ func main() {
 			},
 		}
 
-		pageData := frontend.PageData{
-			Submissions:      paged,
+		pageData := frontend.ProfilePageData{
+			IsClientAdmin:    clientUsername == "admin",
+			IsUserAdmin:      username == "admin",
+			Submissions:      submissions,
 			CurrentPage:      1,
 			Limit:            10,
 			HasNextPage:      true,
 			TotalPages:       5,
-			Username:         "JohnDoe",
+			Username:         username,
 			Email:            "johndoe@example.com",
 			MemberSince:      "January 2023",
 			TotalSubmissions: 50,
 			SolvedProblems:   30,
 			SolveRate:        60,
-}
+		}
 		c.HTML(http.StatusOK, "profile.html", pageData)
 	})
 

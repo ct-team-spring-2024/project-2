@@ -17,6 +17,27 @@
             <p><strong>Username:</strong> {{ .Username }}</p>
             <p><strong>Email:</strong> {{ .Email }}</p>
             <p><strong>Member Since:</strong> {{ .MemberSince }}</p>
+            <!-- Role Section -->
+            <p><strong>Role:</strong>
+                {{ if .IsUserAdmin }}
+                Admin
+                {{ else }}
+                User
+                {{ end }}
+            </p>
+
+            <!-- Button for Upgrading/Downgrading Role -->
+            {{ if .IsClientAdmin }}
+            <div class="role-button">
+                <button>
+                    {{ if .IsUserAdmin }}
+                    Degrade to User
+                    {{ else }}
+                    Upgrade to Admin
+                    {{ end }}
+                </button>
+            </div>
+            {{ end }}
          </div>
       </section>
 

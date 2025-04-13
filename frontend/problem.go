@@ -11,11 +11,13 @@ type Problem struct {
 
 type Submission struct {
 	ProblemName    string
-	Status         string // e.g., "Accepted", "Wrong Answer"
-	SubmissionDate string // e.g., "2023-09-01"
+	Status         string
+	SubmissionDate string
 }
 
-type PageData struct {
+type ProfilePageData struct {
+	IsClientAdmin    bool
+	IsUserAdmin      bool
 	Submissions      []Submission
 	CurrentPage      int
 	Limit            int
