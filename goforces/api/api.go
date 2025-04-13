@@ -7,6 +7,7 @@ import (
 	"oj/goforces/internal/controllers"
 	"oj/goforces/internal/db"
 	"oj/goforces/internal/middlewares"
+	"oj/goforces/internal/models"
 	"oj/goforces/internal/submission"
 
 	"github.com/sirupsen/logrus"
@@ -21,8 +22,6 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(response))
 }
 
-// TODO: should extract the token from request to identify the current user.
-// TODO: should return the value in the http response
 func GetUserSubmission(w http.ResponseWriter, r *http.Request) {
 	u := internal.NewUser(1, "u1", "p1")
 	submissions := submission.GetUserSubmission(DB, *u)
@@ -42,7 +41,7 @@ func GetUserSubmission(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddSubmission(w http.ResponseWriter, r *http.Request) {
-	s := internal.NewSubmission(1, 100)
+	s := models.NewSubmission(1, 100)
 	err := submission.AddSubmission(DB, *s)
 	if err != nil {
 		logrus.Fatalf("Err => %v", err)
@@ -61,5 +60,9 @@ func SetupRoutes() *http.ServeMux {
 
 	mux.Handle("/profile", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetProfile)))
 	mux.Handle("/profile/update", middlewares.AuthMiddleware(http.HandlerFunc(controllers.UpdateProfile)))
+
+	mux.Handle("/admin/user", middlewares.AdminMiddleware(http.HandlerFunc(controllers.GetUserProfile)))
+	mux.Handle("/admin/user/role", middlewares.AdminMiddleware(http.HandlerFunc(controllers.UpdateUserRole)))
+
 	return mux
 }

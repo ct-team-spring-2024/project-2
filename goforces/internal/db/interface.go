@@ -2,9 +2,10 @@ package db
 
 import (
 	"oj/goforces/internal"
+	"oj/goforces/internal/models"
 )
 
 type Database interface {
-	GetUserSubmission(internal.User) []internal.Submission
-	AddSubmission(internal.Submission) error
+	GetUserSubmission(internal.User) []models.Submission
+	AddSubmission(models.Submission) error
 }

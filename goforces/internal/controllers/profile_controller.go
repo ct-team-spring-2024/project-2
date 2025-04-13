@@ -22,9 +22,17 @@ func GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	stats := services.GetSubmissionStats(user)
+
 	user.Password = ""
+
+	response := map[string]interface{}{
+		"profile":         user,
+		"submissionStats": stats,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(response)
 }
 
 func UpdateProfile(w http.ResponseWriter, r *http.Request) {

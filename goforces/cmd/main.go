@@ -23,13 +23,6 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Error loading configuration: %v", err)
 	}
-	// if err := db.Connect(cfg.DatabaseURL); err != nil {
-	// 	Logger.Fatalf("Error connecting to the database: %v", err)
-	// }
-
-	// if err := db.Migrate(); err != nil {
-	// 	logger.Fatalf("Error during database migration: %v", err)
-	// }
 
 	router := api.SetupRoutes()
 
