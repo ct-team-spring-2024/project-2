@@ -44,3 +44,9 @@ type ProblemsPageData struct {
 	HasNextPage    bool
 	TotalPages     int
 }
+
+type AddProblemPageData struct {
+	Page           string
+	ClientUsername string
+	IsClientAdmin  bool
+}

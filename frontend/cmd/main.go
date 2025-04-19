@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
-
 	"strconv"
 	"time"
-
+	"io"
 	ppath "path"
 
 	"github.com/foolin/goview/supports/ginview"
@@ -170,6 +169,58 @@ func main() {
 
 		// Render the problem.html template with the problem data
 		c.HTML(http.StatusOK, "problem.html", problem)
+	})
+
+	router.GET("/add-problem", func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
+		pageData := frontend.AddProblemPageData{
+			Page:             "add-problem",
+			ClientUsername:   clientUsername,
+			IsClientAdmin:    clientUsername == "admin",
+		}
+		c.HTML(http.StatusOK, "add-problem", pageData)
+	})
+	router.POST("/add-problem", func(c *gin.Context) {
+		// Parse the multipart form (with a max memory of 32MB for file uploads)
+		if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to parse form data"})
+			return
+		}
+
+		// Extract form fields
+		problemTitle := c.PostForm("problemTitle")
+		timeLimit := c.PostForm("timeLimit")
+		memoryLimit := c.PostForm("memoryLimit")
+		problemDescription := c.PostForm("problemDescription")
+
+		// Extract the uploaded test case file
+		file, fileHeader, err := c.Request.FormFile("testCaseFile")
+		var testCaseContent string
+		if err == nil {
+			defer file.Close()
+			// Read the file content
+			content, err := io.ReadAll(file)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to read test case file"})
+				return
+			}
+			testCaseContent = string(content)
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve test case file"})
+			return
+		}
+
+		// Print the extracted data
+		fmt.Printf("Problem Title: %s\n", problemTitle)
+		fmt.Printf("Time Limit: %s ms\n", timeLimit)
+		fmt.Printf("Memory Limit: %s MB\n", memoryLimit)
+		fmt.Printf("Problem Description: %s\n", problemDescription)
+		fmt.Printf("Test Case File Name: %s\n", fileHeader.Filename)
+		fmt.Printf("Test Case Content: %s\n", testCaseContent)
+
+		// Respond with success
+		c.JSON(http.StatusOK, gin.H{"message": "Problem data received and printed"})
 	})
 
 	router.Run(":8080")
