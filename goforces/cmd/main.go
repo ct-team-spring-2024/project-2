@@ -13,15 +13,14 @@ import (
 )
 
 func main() {
-	logger := logrus.New()
-	logger.SetLevel(logrus.DebugLevel)
-	logger.SetFormatter(&logrus.TextFormatter{})
+	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetFormatter(&logrus.TextFormatter{})
 
-	logger.Debug("This is a debug message")
+	logrus.Debug("This is a debug message")
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		logger.Fatalf("Error loading configuration: %v", err)
+		logrus.Fatalf("Error loading configuration: %v", err)
 	}
 
 	router := api.SetupRoutes()
@@ -39,11 +38,8 @@ func main() {
 		IdleTimeout:  15 * time.Second,
 	}
 	// TODO: GoForces status
-	logger.Printf("Server is running on port %d", port)
+	logrus.Printf("Server is running on port %d", port)
 	if err := srv.ListenAndServe(); err != nil {
-		logger.Fatalf("Server error: %v", err)
+		logrus.Fatalf("Server error: %v", err)
 	}
-
-	// logger.Infof("Starting API server on port %s...\n", port)
-	// logger.Fatal(http.ListenAndServe(strconv.Itoa(port), router))
 }

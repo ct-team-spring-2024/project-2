@@ -3,7 +3,7 @@ package main_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -36,7 +36,7 @@ func TestUserRegistration(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		t.Errorf("Expected status OK, got %v. Response: %s", resp.Status, string(body))
 	}
 }
@@ -65,11 +65,11 @@ func TestUserLogin(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		t.Errorf("Expected status OK, got %v. Response: %s", resp.Status, string(body))
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("Failed to read response body: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestUserProfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to login: %v", err)
 	}
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var result map[string]string
 	json.Unmarshal(body, &result)
 	token := result["token"]
@@ -116,7 +116,7 @@ func TestUserProfile(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		t.Errorf("Expected status OK, got %v. Response: %s", resp.Status, string(body))
 	}
 }
@@ -139,7 +139,7 @@ func TestUserProfileUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to login: %v", err)
 	}
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var result map[string]string
 	json.Unmarshal(body, &result)
 	token := result["token"]
@@ -163,7 +163,7 @@ func TestUserProfileUpdate(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		t.Errorf("Expected status OK, got %v. Response: %s", resp.Status, string(body))
 	}
 }

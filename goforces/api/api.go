@@ -1,66 +1,14 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
-	"oj/goforces/internal"
 	"oj/goforces/internal/controllers"
-	"oj/goforces/internal/db"
 	"oj/goforces/internal/middlewares"
-	"oj/goforces/internal/models"
-	"oj/goforces/internal/submission"
-	"strconv"
-
-	"github.com/sirupsen/logrus"
 )
 
-func helloWorld(w http.ResponseWriter, r *http.Request) {
-	response := "Hello!"
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(response))
-}
-
-func GetUserSubmission(w http.ResponseWriter, r *http.Request) {
-	u := internal.NewUser(1, "u1", "p1")
-	submissions := submission.GetUserSubmission(db.DB, *u)
-	logrus.Infof("All user submissions => %+v", submissions)
-
-	w.Header().Set("Content-Type", "application/json")
-	if len(submissions) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"message": "No submissions found"}`))
-		return
-	}
-	if err := json.NewEncoder(w).Encode(submissions); err != nil {
-		logrus.Errorf("Failed to encode submissions to JSON: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-}
-
-func AddSubmission(w http.ResponseWriter, r *http.Request) {
-	userIDStr := r.URL.Query().Get("user_id")
-	problemIDStr := r.URL.Query().Get("problem_id")
-
-	userID, err := strconv.Atoi(userIDStr)
-	problemID, err := strconv.Atoi(problemIDStr)
-
-	code := r.URL.Query().Get("code")
-
-	s := models.NewSubmission(userID, problemID, code)
-	err = submission.AddSubmission(db.DB, s)
-	if err != nil {
-		logrus.Fatalf("Err => %v", err)
-	}
-	logrus.Info("Submit added successfully")
-}
 
 func SetupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hello", helloWorld)
-	mux.HandleFunc("/user-submission", GetUserSubmission)
-	mux.HandleFunc("/add-submission", AddSubmission)
 
 	mux.HandleFunc("/register", controllers.Register)
 	mux.HandleFunc("/login", controllers.Login)

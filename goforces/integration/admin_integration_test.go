@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"oj/goforces/api"
 	"oj/goforces/internal/db"
@@ -30,7 +32,7 @@ func adminRegisterAndLogin(ts *httptest.Server) (string, int) {
 	}
 	loginBytes, _ := json.Marshal(loginPayload)
 	resp, _ := http.Post(ts.URL+"/login", "application/json", bytes.NewReader(loginBytes))
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var loginResult map[string]string
 	json.Unmarshal(body, &loginResult)
 	token := loginResult["token"]
@@ -52,13 +54,14 @@ func userRegisterAndLogin(ts *httptest.Server, username, email, password string)
 	}
 	loginBytes, _ := json.Marshal(loginPayload)
 	resp, _ := http.Post(ts.URL+"/login", "application/json", bytes.NewReader(loginBytes))
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var loginResult map[string]interface{}
 	json.Unmarshal(body, &loginResult)
 	token := loginResult["token"].(string)
 	return token, 3
 }
 
+// TODO: Incomplete. Response is not validated
 func TestAdminChangeUserRole(t *testing.T) {
 	handler := api.SetupRoutes()
 	db.DB = db.NewXMockDB()
@@ -67,6 +70,7 @@ func TestAdminChangeUserRole(t *testing.T) {
 
 	adminToken, _ := adminRegisterAndLogin(ts)
 	_, targetUserId := userRegisterAndLogin(ts, "normalUser", "normal@example.com", "password")
+	logrus.Infof("adminToken => %v", adminToken)
 
 	fmt.Println("Running TestAdminChangeUserRole...")
 	payload := map[string]interface{}{
@@ -78,10 +82,11 @@ func TestAdminChangeUserRole(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	req.Header.Set("Content-Type", "application/json")
 	resp, _ := http.DefaultClient.Do(req)
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	fmt.Println("Change User Role Response:", string(body))
 }
 
+// TODO: Incomplete. Response is not validated
 func TestAdminChangeOwnRole(t *testing.T) {
 	handler := api.SetupRoutes()
 	db.DB = db.NewXMockDB()
@@ -100,10 +105,11 @@ func TestAdminChangeOwnRole(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	req.Header.Set("Content-Type", "application/json")
 	resp, _ := http.DefaultClient.Do(req)
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	fmt.Println("Change Own Role (should fail) Response:", string(body))
 }
 
+// TODO: Incomplete. Response is not validated
 func TestAdminPublishProblemDraft(t *testing.T) {
 	handler := api.SetupRoutes()
 	db.DB = db.NewXMockDB()
@@ -128,7 +134,7 @@ func TestAdminPublishProblemDraft(t *testing.T) {
 	}
 	loginBytes, _ := json.Marshal(loginPayload)
 	resp, _ := http.Post(ts.URL+"/login", "application/json", bytes.NewReader(loginBytes))
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var loginResult map[string]interface{}
 	json.Unmarshal(body, &loginResult)
 	ownerToken := loginResult["token"].(string)
@@ -147,7 +153,7 @@ func TestAdminPublishProblemDraft(t *testing.T) {
 	reqProb.Header.Set("Authorization", "Bearer "+ownerToken)
 	reqProb.Header.Set("Content-Type", "application/json")
 	respProb, _ := http.DefaultClient.Do(reqProb)
-	bodyProb, _ := ioutil.ReadAll(respProb.Body)
+	bodyProb, _ := io.ReadAll(respProb.Body)
 	var probResult map[string]interface{}
 	json.Unmarshal(bodyProb, &probResult)
 	problemId := int(probResult["problemId"].(float64))
@@ -164,70 +170,71 @@ func TestAdminPublishProblemDraft(t *testing.T) {
 	reqStatus.Header.Set("Authorization", "Bearer "+adminToken)
 	reqStatus.Header.Set("Content-Type", "application/json")
 	respStatus, _ := http.DefaultClient.Do(reqStatus)
-	bodyStatus, _ := ioutil.ReadAll(respStatus.Body)
+	bodyStatus, _ := io.ReadAll(respStatus.Body)
 	fmt.Println("Publish Response:", string(bodyStatus))
 }
 
-func TestAdminRejectProblemDraft(t *testing.T) {
-	handler := api.SetupRoutes()
-	db.DB = db.NewXMockDB()
-	ts := httptest.NewServer(handler)
-	defer ts.Close()
+// TODO: Admin cannot reject problem draft. Not stated in the project
+// func TestAdminRejectProblemDraft(t *testing.T) {
+//	handler := api.SetupRoutes()
+//	db.DB = db.NewXMockDB()
+//	ts := httptest.NewServer(handler)
+//	defer ts.Close()
 
-	adminToken, _ := adminRegisterAndLogin(ts)
+//	adminToken, _ := adminRegisterAndLogin(ts)
 
-	fmt.Println("Running TestAdminRejectProblemDraft...")
-	regPayload := map[string]string{
-		"username": "draftowner",
-		"email":    "draftowner@example.com",
-		"password": "password",
-		"role":     "user",
-	}
-	regBytes, _ := json.Marshal(regPayload)
-	http.Post(ts.URL+"/register", "application/json", bytes.NewReader(regBytes))
-	loginPayload := map[string]string{
-		"email":    "draftowner@example.com",
-		"password": "password",
-	}
-	loginBytes, _ := json.Marshal(loginPayload)
-	resp, _ := http.Post(ts.URL+"/login", "application/json", bytes.NewReader(loginBytes))
-	body, _ := ioutil.ReadAll(resp.Body)
-	var loginResult map[string]interface{}
-	json.Unmarshal(body, &loginResult)
-	ownerToken := loginResult["token"].(string)
+//	fmt.Println("Running TestAdminRejectProblemDraft...")
+//	regPayload := map[string]string{
+//		"username": "draftowner",
+//		"email":    "draftowner@example.com",
+//		"password": "password",
+//		"role":     "user",
+//	}
+//	regBytes, _ := json.Marshal(regPayload)
+//	http.Post(ts.URL+"/register", "application/json", bytes.NewReader(regBytes))
+//	loginPayload := map[string]string{
+//		"email":    "draftowner@example.com",
+//		"password": "password",
+//	}
+//	loginBytes, _ := json.Marshal(loginPayload)
+//	resp, _ := http.Post(ts.URL+"/login", "application/json", bytes.NewReader(loginBytes))
+//	body, _ := io.ReadAll(resp.Body)
+//	var loginResult map[string]interface{}
+//	json.Unmarshal(body, &loginResult)
+//	ownerToken := loginResult["token"].(string)
 
-	probPayload := map[string]interface{}{
-		"title":       "Problem Draft to be Rejected",
-		"statement":   "Do something.",
-		"timeLimit":   2,
-		"memoryLimit": 256,
-		"input":       "data",
-		"output":      "result",
-	}
-	probBytes, _ := json.Marshal(probPayload)
-	reqProb, _ := http.NewRequest("POST", ts.URL+"/problems", bytes.NewReader(probBytes))
-	reqProb.Header.Set("Authorization", "Bearer "+ownerToken)
-	reqProb.Header.Set("Content-Type", "application/json")
-	respProb, _ := http.DefaultClient.Do(reqProb)
-	bodyProb, _ := ioutil.ReadAll(respProb.Body)
-	var probResult map[string]interface{}
-	json.Unmarshal(bodyProb, &probResult)
-	problemId := int(probResult["problemId"].(float64))
-	fmt.Printf("Created Draft Problem ID: %d\n", problemId)
+//	probPayload := map[string]interface{}{
+//		"title":       "Problem Draft to be Rejected",
+//		"statement":   "Do something.",
+//		"timeLimit":   2,
+//		"memoryLimit": 256,
+//		"input":       "data",
+//		"output":      "result",
+//	}
+//	probBytes, _ := json.Marshal(probPayload)
+//	reqProb, _ := http.NewRequest("POST", ts.URL+"/problems", bytes.NewReader(probBytes))
+//	reqProb.Header.Set("Authorization", "Bearer "+ownerToken)
+//	reqProb.Header.Set("Content-Type", "application/json")
+//	respProb, _ := http.DefaultClient.Do(reqProb)
+//	bodyProb, _ := io.ReadAll(respProb.Body)
+//	var probResult map[string]interface{}
+//	json.Unmarshal(bodyProb, &probResult)
+//	problemId := int(probResult["problemId"].(float64))
+//	fmt.Printf("Created Draft Problem ID: %d\n", problemId)
 
-	statusPayload := map[string]interface{}{
-		"problemId": problemId,
-		"newStatus": "rejected",
-		"feedback":  "Insufficient problem statement details.",
-	}
-	statusBytes, _ := json.Marshal(statusPayload)
-	reqStatus, _ := http.NewRequest("POST", ts.URL+"/admin/problems/status", bytes.NewReader(statusBytes))
-	reqStatus.Header.Set("Authorization", "Bearer "+adminToken)
-	reqStatus.Header.Set("Content-Type", "application/json")
-	respStatus, _ := http.DefaultClient.Do(reqStatus)
-	bodyStatus, _ := ioutil.ReadAll(respStatus.Body)
-	fmt.Println("Reject Response:", string(bodyStatus))
-}
+//	statusPayload := map[string]interface{}{
+//		"problemId": problemId,
+//		"newStatus": "rejected",
+//		"feedback":  "Insufficient problem statement details.",
+//	}
+//	statusBytes, _ := json.Marshal(statusPayload)
+//	reqStatus, _ := http.NewRequest("POST", ts.URL+"/admin/problems/status", bytes.NewReader(statusBytes))
+//	reqStatus.Header.Set("Authorization", "Bearer "+adminToken)
+//	reqStatus.Header.Set("Content-Type", "application/json")
+//	respStatus, _ := http.DefaultClient.Do(reqStatus)
+//	bodyStatus, _ := io.ReadAll(respStatus.Body)
+//	fmt.Println("Reject Response:", string(bodyStatus))
+// }
 
 func TestAdminChangePublishedToDraft(t *testing.T) {
 	handler := api.SetupRoutes()
@@ -255,6 +262,6 @@ func TestAdminChangePublishedToDraft(t *testing.T) {
 	reqStatus.Header.Set("Authorization", "Bearer "+adminToken)
 	reqStatus.Header.Set("Content-Type", "application/json")
 	respStatus, _ := http.DefaultClient.Do(reqStatus)
-	bodyStatus, _ := ioutil.ReadAll(respStatus.Body)
+	bodyStatus, _ := io.ReadAll(respStatus.Body)
 	fmt.Println("Change to Draft Response:", string(bodyStatus))
 }
