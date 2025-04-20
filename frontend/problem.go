@@ -5,8 +5,8 @@ type Problem struct {
 	Statement   string
 	Title       string
 	ProblemName string
-	TimeLimit   string
-	MemoryLimit string
+	TimeLimit   int
+	MemoryLimit int
 	Status      string
 }
 
@@ -49,4 +49,25 @@ type AddProblemPageData struct {
 	Page           string
 	ClientUsername string
 	IsClientAdmin  bool
+}
+
+
+type ProblemSummary struct {
+	Id     string
+	Title  string
+	Status string
+}
+
+type MyProblemsPageData struct {
+	Page           string
+	ClientUsername string
+	IsClientAdmin  bool
+	Problems       []ProblemSummary
+}
+
+type EditProblemPageData struct {
+	Page           string
+	ClientUsername string
+	IsClientAdmin  bool
+	Problem        Problem
 }

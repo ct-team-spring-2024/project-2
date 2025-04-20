@@ -222,11 +222,71 @@ func main() {
 		// Respond with success
 		c.JSON(http.StatusOK, gin.H{"message": "Problem data received and printed"})
 	})
+	router.GET("/my-problems", func (c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
+		problems := []frontend.ProblemSummary{
+			{
+				Id:     "1",
+				Title:  "Two Sum",
+				Status: "published",
+			},
+			{
+				Id:     "2",
+				Title:  "Fibonacci Sequence",
+				Status: "draft",
+			},
+			{
+				Id:     "3",
+				Title:  "Binary Search",
+				Status: "published",
+			},
+		}
+		pageData := frontend.MyProblemsPageData{
+			Page:           "my-problems",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			Problems:       problems,
+		}
+
+		c.HTML(http.StatusOK, "my-problems", pageData)
+	})
+	router.GET("/edit/:id", func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
+
+		// Extract the problem ID from the URL
+		idStr := c.Param("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil || id <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid problem ID"})
+			return
+		}
+
+		// Fetch the problem details
+		problem, err := getProblemByID(id)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Problem not found"})
+			return
+		}
+
+		editProblemPageData := frontend.EditProblemPageData{
+			Page:           "edit-problem",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			Problem:        problem,
+		}
+		logrus.Infof("Problem => %+v", editProblemPageData.Problem)
+
+		// Render the problem.html template with the problem data
+		c.HTML(http.StatusOK, "edit-problem", editProblemPageData)
+	})
+
 
 	router.Run(":8080")
 }
 
-func getProblemByID(id int) (*frontend.Problem, error) {
+func getProblemByID(id int) (frontend.Problem, error) {
 	// Simulate a database lookup
 	mockProblems := map[int]frontend.Problem{
 		1000: {
@@ -234,16 +294,16 @@ func getProblemByID(id int) (*frontend.Problem, error) {
 			Title:       "Sorting Algorithm",
 			ProblemName: "Sort the Array",
 			Statement:   "Given an array of integers, sort the array in ascending order.",
-			TimeLimit:   "2 seconds",
-			MemoryLimit: "256 MB",
+			TimeLimit:   2,
+			MemoryLimit: 256,
 		},
 		1001: {
 			Id:          1001,
 			Title:       "Binary Search",
 			ProblemName: "Find the Element",
 			Statement:   "Given a sorted array and a target value, find the index of the target using binary search.",
-			TimeLimit:   "1 second",
-			MemoryLimit: "128 MB",
+			TimeLimit:   2,
+			MemoryLimit: 128,
 		},
 	}
 
@@ -252,7 +312,7 @@ func getProblemByID(id int) (*frontend.Problem, error) {
 		problem = mockProblems[1000]
 		// return nil, fmt.Errorf("problem not found")
 	}
-	return &problem, nil
+	return problem, nil
 }
 
 func getProblems(pageNumber int, limit int) []frontend.Problem {

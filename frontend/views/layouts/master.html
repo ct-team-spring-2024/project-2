@@ -16,6 +16,12 @@
         {{ if eq .Page "add-problem" }}
         <link rel="stylesheet" href="/static/add_problem_style.css">
         {{ end }}
+        {{ if eq .Page "my-problems" }}
+        <link rel="stylesheet" href="/static/my_problems_style.css">
+        {{ end }}
+        {{ if eq .Page "edit-problem" }}
+        <link rel="stylesheet" href="/static/edit_problem_style.css">
+        {{ end }}
     </head>
     <body>
         <!-- Header Section -->
