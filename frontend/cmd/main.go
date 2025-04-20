@@ -281,6 +281,35 @@ func main() {
 		// Render the problem.html template with the problem data
 		c.HTML(http.StatusOK, "edit-problem", editProblemPageData)
 	})
+	router.GET("/manage-problems", func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
+		problems := []frontend.ProblemSummary{
+			{
+				Id:     "1",
+				Title:  "Two Sum",
+				Status: "published",
+			},
+			{
+				Id:     "2",
+				Title:  "Fibonacci Sequence",
+				Status: "draft",
+			},
+			{
+				Id:     "3",
+				Title:  "Binary Search",
+				Status: "published",
+			},
+		}
+		pageData := frontend.ManageProblemsPageData{
+			Page:           "manage-problems",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			Problems:       problems,
+		}
+
+		c.HTML(http.StatusOK, "manage-problems", pageData)
+	})
 
 
 	router.Run(":8080")

@@ -71,3 +71,10 @@ type EditProblemPageData struct {
 	IsClientAdmin  bool
 	Problem        Problem
 }
+
+type ManageProblemsPageData struct {
+	Page           string
+	ClientUsername string
+	IsClientAdmin  bool
+	Problems       []ProblemSummary
+}
