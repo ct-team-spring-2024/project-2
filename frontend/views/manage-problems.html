@@ -1,0 +1,31 @@
+{{ define "title" }}Problems List{{ end }}
+
+{{ define "content" }}
+<section class="problem-list">
+    <h2>Problem List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Problem Name</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Problems }}
+            <tr>
+                <td><a href="/edit/{{ .Id }}">{{ .Id }}</a></td>
+                <td>{{ .Title }}</td>
+                <td>
+                    {{ if eq .Status "draft" }}
+                    <button class="publish" onclick="updateStatus('{{ .Id }}', 'publish')">Make Publish</button>
+                    {{ else if eq .Status "published" }}
+                    <button class="draft" onclick="updateStatus('{{ .Id }}', 'draft')">Make Draft</button>
+                    {{ end }}
+                </td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</section>
+{{ end }}
