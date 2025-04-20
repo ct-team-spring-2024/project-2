@@ -1,4 +1,4 @@
-package integration
+package main_test
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"oj/goforces/api"
-	"oj/goforces/internal"
 	"oj/goforces/internal/db"
+	"oj/goforces/internal/models"
 )
 
 func TestAddCorrectSubmit(t *testing.T) {
@@ -23,7 +23,7 @@ func TestAddCorrectSubmit(t *testing.T) {
 	port := ":8080"
 
 	// Setup DB
-	api.DB = db.NewMockDB()
+	db.DB = db.NewXMockDB()
 
 	router := api.SetupRoutes()
 
@@ -34,7 +34,7 @@ func TestAddCorrectSubmit(t *testing.T) {
 	http.Get(server.URL + "/add-submission")
 	http.Get(server.URL + "/add-submission")
 
-	var submissions []internal.Submission
+	var submissions []models.Submission
 	resp, _ := http.Get(server.URL + "/user-submission")
 	if err := json.NewDecoder(resp.Body).Decode(&submissions); err != nil {
 		// Handle decoding error
