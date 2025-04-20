@@ -17,10 +17,11 @@ const (
 )
 
 type Submission struct {
-	SubmissionId int              `json:"submission_id"`
-	UserId       int              `json:"user_id"`
-	ProblemId    int              `json:"problem_id"`
-	Status       SubmissionStatus `json:"status"`
+	ID        int              `json:"id"`
+	UserId    int              `json:"userId"`
+	ProblemId int              `json:"problemId"`
+	Code      string           `json:"code"`
+	Status    SubmissionStatus `json:"status"`
 }
 
 func generateUniqueId() int {
@@ -28,11 +29,12 @@ func generateUniqueId() int {
 	return int(uuidValue.ID())
 }
 
-func NewSubmission(userId int, problemId int) *Submission {
-	return &Submission{
-		SubmissionId: int(generateUniqueId()),
-		UserId:       userId,
-		ProblemId:    problemId,
-		Status:       Submitted,
+func NewSubmission(userId int, problemId int, code string) Submission {
+	return Submission{
+		ID:        generateUniqueId(),
+		UserId:    userId,
+		ProblemId: problemId,
+		Code:      code,
+		Status:    "Submitted",
 	}
 }

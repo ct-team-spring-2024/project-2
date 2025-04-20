@@ -7,7 +7,7 @@ import (
 )
 
 func GetUserSubmission(db db.Database, user internal.User) []models.Submission {
-	return db.GetUserSubmission(user)
+	return db.GetUserSubmission(user.UserId)
 }
 
 func AddSubmission(db db.Database, submission models.Submission) error {

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"oj/goforces/internal/db"
 	"oj/goforces/internal/models"
 )
 
@@ -15,7 +16,7 @@ type SubmissionStats struct {
 }
 
 func GetSubmissionStats(user models.User) SubmissionStats {
-	submissions := submissionDB.GetUserSubmission(user.UserId)
+	submissions := db.DB.GetUserSubmission(user.UserId)
 	total := len(submissions)
 	var success, fail, errorCount int
 	for _, sub := range submissions {
