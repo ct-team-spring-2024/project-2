@@ -23,7 +23,7 @@ func LoadConfig() (*Config, error) {
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "mockdb"
+		dbURL = "xmockdb"
 	}
 
 	return &Config{

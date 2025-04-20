@@ -9,14 +9,13 @@ import (
 	"oj/goforces/internal/middlewares"
 	"oj/goforces/internal/models"
 	"oj/goforces/internal/submission"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 )
 
-var DB db.Database
-
 func helloWorld(w http.ResponseWriter, r *http.Request) {
-	response := "gooz"
+	response := "Hello!"
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(response))
@@ -24,7 +23,7 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 
 func GetUserSubmission(w http.ResponseWriter, r *http.Request) {
 	u := internal.NewUser(1, "u1", "p1")
-	submissions := submission.GetUserSubmission(DB, *u)
+	submissions := submission.GetUserSubmission(db.DB, *u)
 	logrus.Infof("All user submissions => %+v", submissions)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -41,8 +40,16 @@ func GetUserSubmission(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddSubmission(w http.ResponseWriter, r *http.Request) {
-	s := models.NewSubmission(1, 100)
-	err := submission.AddSubmission(DB, *s)
+	userIDStr := r.URL.Query().Get("user_id")
+	problemIDStr := r.URL.Query().Get("problem_id")
+
+	userID, err := strconv.Atoi(userIDStr)
+	problemID, err := strconv.Atoi(problemIDStr)
+
+	code := r.URL.Query().Get("code")
+
+	s := models.NewSubmission(userID, problemID, code)
+	err = submission.AddSubmission(db.DB, s)
 	if err != nil {
 		logrus.Fatalf("Err => %v", err)
 	}
@@ -63,6 +70,17 @@ func SetupRoutes() *http.ServeMux {
 
 	mux.Handle("/admin/user", middlewares.AdminMiddleware(http.HandlerFunc(controllers.GetUserProfile)))
 	mux.Handle("/admin/user/role", middlewares.AdminMiddleware(http.HandlerFunc(controllers.UpdateUserRole)))
+
+	mux.Handle("/problems", middlewares.AuthMiddleware(http.HandlerFunc(controllers.ProblemsHandler)))
+
+	mux.Handle("/problems/mine", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetMyProblems)))
+	mux.Handle("/problems/", http.HandlerFunc(controllers.GetProblemByID))
+
+	mux.Handle("/admin/problems", middlewares.AdminMiddleware(http.HandlerFunc(controllers.AdminGetAllProblems)))
+	mux.Handle("/admin/problems/status", middlewares.AdminMiddleware(http.HandlerFunc(controllers.AdminUpdateProblemStatus)))
+
+	mux.Handle("/submit", middlewares.AuthMiddleware(http.HandlerFunc(controllers.CreateSubmission)))
+	mux.Handle("/submissions", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetMySubmissions)))
 
 	return mux
 }

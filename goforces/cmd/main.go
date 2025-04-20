@@ -28,7 +28,7 @@ func main() {
 
 	port := cfg.Port
 
-	api.DB = db.NewMockDB()
+	db.DB = db.NewXMockDB()
 
 	serverAddress := fmt.Sprintf(":%d", port)
 	srv := &http.Server{
