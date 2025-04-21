@@ -1,14 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	ppath "path"
 	"strconv"
 	"time"
-	"io"
-	ppath "path"
-	"encoding/json"
-	"bytes"
 
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
@@ -23,6 +23,10 @@ var store = sessions.NewCookieStore([]byte("a-very-secret-key"))
 
 // var path = "C:/Users/Asus/Documents/GitHub/project-2"
 var path = "/home/mbroughani81/Documents/test/computer-technology-project-2"
+
+func logStringError(body []byte) {
+	logrus.Warnf("ERROR => %s", string(body))
+}
 
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
@@ -42,29 +46,29 @@ func main() {
 	//	"pageRange": pageRange,
 	// })
 
-	backendUrl := "localhost:8080"
+	backendUrl := "http://localhost:8080"
 	//Log in page
 	router.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 	router.POST("/login", func(c *gin.Context) {
+		// request
 		var loginData struct {
-			Email    string `form:"email" json:"email"`
-			Password string `form:"password" json:"password"`
+			Username string `form:"username"`
+			Password string `form:"password"`
 		}
 
-		if err := c.ShouldBindJSON(&loginData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON payload"})
+		if err := c.ShouldBind(&loginData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 			return
 		}
-
 		payloadBytes, err := json.Marshal(loginData)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal payload"})
 			return
 		}
 
-		logrus.Infof("payload => %+v", loginData)
+		// send to backend
 		loginUrl := fmt.Sprintf("%s/login", backendUrl)
 		resp, err := http.Post(loginUrl, "application/json", bytes.NewReader(payloadBytes))
 		if err != nil {
@@ -82,7 +86,10 @@ func main() {
 		var result struct {
 			Token string `json:"token"`
 		}
+		// TODO: the response should have a structure. A simple string is not good.
 		if err := json.Unmarshal(body, &result); err != nil || result.Token == "" {
+			logrus.Infof("Result => %+v", result)
+			logStringError(body)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
 			return
 		}
@@ -92,14 +99,14 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get session"})
 			return
 		}
-		session.Values["username"] = loginData.Email // Storing email as username
+		session.Values["username"] = loginData.Username
 		session.Values["jwt"] = result.Token
 		if err := session.Save(c.Request, c.Writer); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"token": result.Token})
+		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", loginData.Username))
 	})
 
 	router.GET("/profile/:username", func(c *gin.Context) {
@@ -216,9 +223,9 @@ func main() {
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
 		pageData := frontend.AddProblemPageData{
-			Page:             "add-problem",
-			ClientUsername:   clientUsername,
-			IsClientAdmin:    clientUsername == "admin",
+			Page:           "add-problem",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
 		}
 		c.HTML(http.StatusOK, "add-problem", pageData)
 	})
@@ -263,7 +270,7 @@ func main() {
 		// Respond with success
 		c.JSON(http.StatusOK, gin.H{"message": "Problem data received and printed"})
 	})
-	router.GET("/my-problems", func (c *gin.Context) {
+	router.GET("/my-problems", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
 		problems := []frontend.ProblemSummary{
@@ -351,7 +358,6 @@ func main() {
 
 		c.HTML(http.StatusOK, "manage-problems", pageData)
 	})
-
 
 	router.Run(":8081")
 }

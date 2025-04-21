@@ -28,7 +28,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	var credentials struct {
-		Email    string `json:"email"`
+		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 
@@ -36,8 +36,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
+	token, err := services.AuthenticateUserWithUsername(credentials.Username, credentials.Password)
 
-	token, err := services.AuthenticateUser(credentials.Email, credentials.Password)
 	if err != nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
