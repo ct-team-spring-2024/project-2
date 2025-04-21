@@ -13,7 +13,7 @@ func SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("/register", controllers.Register)
 	mux.HandleFunc("/login", controllers.Login)
 
-	mux.Handle("/profile", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetProfile)))
+	mux.Handle("/profile/{username}", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetProfile)))
 	mux.Handle("/profile/update", middlewares.AuthMiddleware(http.HandlerFunc(controllers.UpdateProfile)))
 
 	mux.Handle("/admin/user", middlewares.AdminMiddleware(http.HandlerFunc(controllers.GetUserProfile)))

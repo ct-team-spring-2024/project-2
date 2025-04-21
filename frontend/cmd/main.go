@@ -52,17 +52,31 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 	router.POST("/login", func(c *gin.Context) {
-		// request
-		var loginData struct {
+		type formDataType struct {
 			Username string `form:"username"`
 			Password string `form:"password"`
 		}
+		type apiRequestDataType struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+		type apiResponseDataType struct {
+			Token string `json:"token"`
+		}
 
-		if err := c.ShouldBind(&loginData); err != nil {
+		// request
+		var formData formDataType
+		if err := c.ShouldBind(&formData); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 			return
 		}
-		payloadBytes, err := json.Marshal(loginData)
+
+		var apiRequestData apiRequestDataType
+		apiRequestData = apiRequestDataType{
+			Username: formData.Username,
+			Password: formData.Password,
+		}
+		payloadBytes, err := json.Marshal(apiRequestData)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal payload"})
 			return
@@ -83,9 +97,7 @@ func main() {
 			return
 		}
 
-		var result struct {
-			Token string `json:"token"`
-		}
+		var result apiResponseDataType
 		// TODO: the response should have a structure. A simple string is not good.
 		if err := json.Unmarshal(body, &result); err != nil || result.Token == "" {
 			logrus.Infof("Result => %+v", result)
@@ -99,57 +111,89 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get session"})
 			return
 		}
-		session.Values["username"] = loginData.Username
+		session.Values["username"] = formData.Username
 		session.Values["jwt"] = result.Token
 		if err := session.Save(c.Request, c.Writer); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
 			return
 		}
 
-		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", loginData.Username))
+		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", formData.Username))
 	})
 
 	router.GET("/profile/:username", func(c *gin.Context) {
-		session, _ := store.Get(c.Request, "session-name")
-		clientUsername := session.Values["username"].(string)
-		username := c.Param("username")
-		logrus.Infof("clientUsername => %s", clientUsername)
-		logrus.Infof("username => %s", username)
-
-		submissions := []frontend.Submission{
-			{
-				ProblemName:    "Sorting Algorithm",
-				Status:         "Accepted",
-				SubmissionDate: "2023-09-01",
-			},
-			{
-				ProblemName:    "Binary Search",
-				Status:         "Wrong Answer",
-				SubmissionDate: "2023-09-02",
-			},
-			{
-				ProblemName:    "Linked List Manipulation",
-				Status:         "Accepted",
-				SubmissionDate: "2023-09-03",
-			},
+		type apiResponseDataType struct {
+			Profile struct {
+				UserId   int    `json:"userId"`
+				Username string `json:"username"`
+				Email    string `json:"email"`
+				Password string `json:"password"`
+				Role     string `json:"role"`
+			} `json:"profile"`
+			SubmissionStats struct {
+				Total          int     `json:"total"`
+				SuccessCount   int     `json:"successCount"`
+				SuccessPercent float64 `json:"successPercent"`
+				FailCount      int     `json:"failCount"`
+				FailPercent    float64 `json:"failPercent"`
+				ErrorCount     int     `json:"errorCount"`
+				ErrorPercent   float64 `json:"errorPercent"`
+			} `json:"submissionStats"`
 		}
 
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
+		token := session.Values["jwt"].(string)
+		username := c.Param("username")
+		logrus.Infof("clientUsername => %s", clientUsername)
+		logrus.Infof("token => %s", token)
+		logrus.Infof("username => %s", username)
+
+		profileUrl := fmt.Sprintf("%s/profile/%s", backendUrl, username)
+		req, err := http.NewRequest("POST", profileUrl, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+			return
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+
+		var result apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Resultttt => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+
+		logrus.Infof("result => %+v", result)
 		pageData := frontend.ProfilePageData{
 			Page:             "profile",
 			ClientUsername:   clientUsername,
 			IsClientAdmin:    clientUsername == "admin",
 			IsUserAdmin:      username == "admin",
-			Submissions:      submissions,
-			CurrentPage:      1,
-			Limit:            10,
-			HasNextPage:      true,
-			TotalPages:       5,
 			Username:         username,
-			Email:            "johndoe@example.com",
+			Submissions:      make([]frontend.Submission, 0),
+			Email:            result.Profile.Email,
 			MemberSince:      "January 2023",
-			TotalSubmissions: 50,
-			SolvedProblems:   30,
-			SolveRate:        60,
+			TotalSubmissions: result.SubmissionStats.Total,
+			SolvedProblems:   result.SubmissionStats.SuccessCount,
+			SolveRate:        100,
 		}
 		c.HTML(http.StatusOK, "profile", pageData)
 	})

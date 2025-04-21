@@ -114,6 +114,17 @@ func GetUserByID(id int) (models.User, error) {
 	return models.User{}, errors.New("user not found")
 }
 
+func GetUserByUsername(username string) (models.User, error) {
+	userMutex.Lock()
+	defer userMutex.Unlock()
+	for _, user := range users {
+		if user.Username == username {
+			return user, nil
+		}
+	}
+	return models.User{}, errors.New("user not found")
+}
+
 func UpdateUserProfile(id int, updated models.User) (models.User, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()

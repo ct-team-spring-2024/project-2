@@ -94,7 +94,7 @@ func TestUserProfile(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	payload := map[string]string{
-		"email":    "testuser@example.com",
+		"username": "testuser",
 		"password": "password123",
 	}
 	payloadBytes, _ := json.Marshal(payload)

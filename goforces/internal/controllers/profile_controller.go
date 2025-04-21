@@ -4,24 +4,20 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
+
 	"oj/goforces/internal/middlewares"
 	"oj/goforces/internal/models"
 	"oj/goforces/internal/services"
+
 )
 
 func GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := middlewares.GetUserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "User not found in context", http.StatusUnauthorized)
-		return
-	}
 
-	user, err := services.GetUserByID(userID)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
+	username := r.PathValue("username")
+	logrus.Infof("username => %s", username)
 
+	user, _ := services.GetUserByUsername(username)
 	stats := services.GetSubmissionStats(user)
 
 	user.Password = ""

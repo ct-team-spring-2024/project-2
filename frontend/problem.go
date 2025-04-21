@@ -21,12 +21,8 @@ type ProfilePageData struct {
 	ClientUsername   string
 	IsClientAdmin    bool
 	IsUserAdmin      bool
-	Submissions      []Submission
-	CurrentPage      int
-	Limit            int
-	HasNextPage      bool
-	TotalPages       int
 	Username         string
+	Submissions      []Submission
 	Email            string
 	MemberSince      string
 	TotalSubmissions int
