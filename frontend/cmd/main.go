@@ -199,47 +199,89 @@ func main() {
 	})
 
 	router.GET("/problems", func(c *gin.Context) {
+		type apiRequestDataType struct {
+			PageNo   int `json:"pageno"`
+			PageSize int `json:"pagesize"`
+		}
+		type apiResponseDataType struct {
+			ProblemId    int       `json:"problemId"`
+			OwnerId      int       `json:"ownerId"`
+			Title        string    `json:"title"`
+			Statement    string    `json:"statement"`
+			TimeLimit    int       `json:"timeLimit"`
+			MemoryLimit  int       `json:"memoryLimit"`
+			Input        string    `json:"input"`
+			Output       string    `json:"output"`
+			Status       string    `json:"status"`
+			Feedback     string    `json:"feedback"`
+			PublishDate  string    `json:"publishDate"`
+		}
+
 		session, _ := store.Get(c.Request, "session-name")
+		token := session.Values["jwt"].(string)
 		clientUsername := session.Values["username"].(string)
-		pageNo := c.DefaultQuery("page", "1")
-		limitNo := c.DefaultQuery("limit", "20")
-		authenticate(c)
-		fmt.Println("canme here")
-		tokensring, _ := store.Get(c.Request, "session-name")
-		fmt.Println(tokensring)
+		pageNo, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+		pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-		page, _ := strconv.Atoi(pageNo)
-		limit, _ := strconv.Atoi(limitNo)
-		if page < 1 {
-			page = 1
-		}
-		allProblems := getProblems(1, 1000)
-		total := len(allProblems)
-		totalPages := (total + limit - 1) / limit // round up
 
-		if page > totalPages {
-			page = totalPages
+		problemsUrl := fmt.Sprintf("%s/problems", backendUrl)
+		apiRequestData := apiRequestDataType{
+			PageNo: pageNo,
+			PageSize: pageSize,
 		}
-		start := (page - 1) * limit
-		end := start + limit
-		if end > total {
-			end = total
+		apiRequestBytes, err := json.Marshal(apiRequestData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal payload"})
+			return
 		}
 
-		paged := allProblems[start:end]
-		logrus.Infof("paged %+v", paged)
+		req, err := http.NewRequest("GET", problemsUrl, bytes.NewReader(apiRequestBytes))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+			return
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+
+		var result []apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Result => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+
+		problems := make([]frontend.ProblemPageProblemSummary, 0, 0)
+		for _, p := range result {
+			problems = append(problems, frontend.ProblemPageProblemSummary{
+				Id: p.ProblemId,
+				Title: p.Title,
+			})
+		}
 		pageData := frontend.ProblemsPageData{
 			Page:           "problems",
 			ClientUsername: clientUsername,
 			IsClientAdmin:  clientUsername == "admin",
-			Problems:       paged,
-			CurrentPage:    page,
-			Limit:          limit,
-			HasNextPage:    page < totalPages,
-			TotalPages:     totalPages,
+			Problems:       problems,
+			CurrentPage:    pageNo,
+			Limit:          20,
+			HasNextPage:    pageNo < 100,
+			TotalPages:     1000,
 		}
-
-		fmt.Println("came here")
 		c.HTML(http.StatusOK, "problems", pageData)
 	})
 

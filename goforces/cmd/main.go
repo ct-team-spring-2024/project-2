@@ -10,7 +10,34 @@ import (
 	"oj/goforces/api"
 	"oj/goforces/internal/config"
 	"oj/goforces/internal/db"
+	"oj/goforces/internal/models"
+	"oj/goforces/internal/services"
 )
+
+func initSystem() {
+	u1 := models.User{
+		UserId: 0,
+		Username: "testuser",
+		Email: "testuser@email.com",
+		Password: "password123",
+		Role: "user",
+	}
+	problem1 := models.Problem{
+		ProblemId:   1,
+		OwnerId:     u1.UserId,
+		Title:       "problem 1 title",
+		Statement:   "This is a simple problem",
+		TimeLimit:   1000,
+		MemoryLimit: 2000,
+		Input:       "KIR",
+		Output:      "KHAR",
+		Status:      "published",
+		Feedback:    "HA?",
+		PublishDate: time.Now(),
+	}
+	services.RegisterUser(u1)
+	services.CreateProblem(problem1)
+}
 
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
@@ -28,6 +55,7 @@ func main() {
 	port := cfg.Port
 
 	db.DB = db.NewXMockDB()
+	initSystem()
 
 	serverAddress := fmt.Sprintf(":%d", port)
 	srv := &http.Server{

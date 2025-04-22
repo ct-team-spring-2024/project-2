@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"oj/goforces/internal/models"
+
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -21,7 +23,6 @@ func CreateProblem(problem models.Problem) (models.Problem, error) {
 
 	problem.ProblemId = problemIdCounter
 	problemIdCounter++
-	problem.Status = "draft"
 	problemsStore = append(problemsStore, problem)
 	return problem, nil
 }
@@ -79,6 +80,7 @@ func GetPublishedProblems(page int, pageSize int) []models.Problem {
 
 	var published []models.Problem
 	for _, p := range problemsStore {
+		logrus.Infof("PP => %v", p)
 		if p.Status == "published" {
 			published = append(published, p)
 		}

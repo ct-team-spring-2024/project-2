@@ -30,11 +30,16 @@ type ProfilePageData struct {
 	SolveRate        int
 }
 
+type ProblemPageProblemSummary struct {
+	Id int
+	Title string
+}
+
 type ProblemsPageData struct {
 	Page           string
 	ClientUsername string
 	IsClientAdmin  bool
-	Problems       []Problem
+	Problems       []ProblemPageProblemSummary
 	CurrentPage    int
 	Limit          int
 	HasNextPage    bool
