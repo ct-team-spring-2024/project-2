@@ -16,11 +16,22 @@ func main() {
 
 	line := strings.TrimSpace(scanner.Text())
 	parts := strings.Split(line, " ")
-	fmt.Printf("KIR ?%v\n", parts)
 
+	if len(parts) != 3 {
+		fmt.Println("Error: Please provide exactly 3 numbers separated by spaces")
+		return
+	}
+
+	fmt.Printf("Input values: %v\n", parts)
 
 	num1, _ := strconv.Atoi(parts[0])
 	num2, _ := strconv.Atoi(parts[1])
+	megabytes, _ := strconv.Atoi(parts[2])
+
+	memory := make([]byte, megabytes*1024*1024)
+	for i := range memory {
+		memory[i] = 0
+	}
 
 	sum := num1 / num2
 
