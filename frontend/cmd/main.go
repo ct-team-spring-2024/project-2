@@ -285,24 +285,73 @@ func main() {
 		c.HTML(http.StatusOK, "problems", pageData)
 	})
 
-	router.GET("/problem/:id", func(c *gin.Context) {
-		// Extract the problem ID from the URL
-		idStr := c.Param("id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id <= 0 {
+	router.GET("/problem/:problemid", func(c *gin.Context) {
+		type apiResponseDataType struct {
+			ProblemId    int       `json:"problemId"`
+			OwnerId      int       `json:"ownerId"`
+			Title        string    `json:"title"`
+			Statement    string    `json:"statement"`
+			TimeLimit    int       `json:"timeLimit"`
+			MemoryLimit  int       `json:"memoryLimit"`
+			Input        string    `json:"input"`
+			Output       string    `json:"output"`
+			Status       string    `json:"status"`
+			Feedback     string    `json:"feedback"`
+			PublishDate  string    `json:"publishDate"`
+		}
+
+		session, _ := store.Get(c.Request, "session-name")
+		token := session.Values["jwt"].(string)
+		clientUsername := session.Values["username"].(string)
+		problemIdStr := c.Param("problemid")
+		problemId, err := strconv.Atoi(problemIdStr)
+		if err != nil || problemId <= 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid problem ID"})
 			return
 		}
 
-		// Fetch the problem details
-		problem, err := getProblemByID(id)
+		problemsUrl := fmt.Sprintf("%s/problems/%d", backendUrl, problemId)
+		req, err := http.NewRequest("GET", problemsUrl, nil)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Problem not found"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+			return
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
 			return
 		}
 
-		// Render the problem.html template with the problem data
-		c.HTML(http.StatusOK, "problem.html", problem)
+		var result apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Result => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+
+		pageData := frontend.SingleProblemPageData{
+			Page:               "problem",
+			ClientUsername:     clientUsername,
+			IsClientAdmin:      clientUsername == "admin",
+			ProblemId:          problemId,
+			ProblemStatement:   result.Statement,
+			ProblemTitle:       result.Title,
+			ProblemTimeLimit:   result.TimeLimit,
+			ProblemMemoryLimit: result.MemoryLimit,
+		}
+		c.HTML(http.StatusOK, "problem", pageData)
 	})
 
 	router.GET("/add-problem", func(c *gin.Context) {

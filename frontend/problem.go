@@ -52,6 +52,17 @@ type AddProblemPageData struct {
 	IsClientAdmin  bool
 }
 
+type SingleProblemPageData struct {
+	Page               string
+	ClientUsername     string
+	IsClientAdmin      bool
+	ProblemId          int
+	ProblemStatement   string
+	ProblemTitle       string
+	ProblemTimeLimit   int
+	ProblemMemoryLimit int
+
+}
 
 type ProblemSummary struct {
 	Id     string

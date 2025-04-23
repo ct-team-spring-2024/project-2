@@ -1,15 +1,74 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-}
-.problem-header {
-    margin-bottom: 20px;
-}
-.statement {
+.problem-details {
+    padding: 2rem;
     background-color: #f9f9f9;
-    padding: 10px;
-    border-radius: 5px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    max-width: 1200px;
 }
-.constraints {
-    margin-top: 20px;
+
+.problem-details h2 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.problem-info table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 1rem;
+}
+
+.problem-info table th,
+.problem-info table td {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+}
+
+.problem-info table th {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    text-align: left;
+}
+
+.problem-info table td {
+    background-color: #fff;
+}
+
+.problem-statement {
+    margin-top: 1.5rem;
+}
+
+.problem-statement h3 {
+    font-size: 1.4rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.problem-statement p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #444;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .problem-details {
+        padding: 1rem;
+    }
+
+    .problem-details h2 {
+        font-size: 1.5rem;
+    }
+
+    .problem-info table {
+        font-size: 0.9rem;
+    }
+
+    .problem-statement h3 {
+        font-size: 1.2rem;
+    }
 }

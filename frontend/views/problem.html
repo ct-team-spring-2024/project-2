@@ -1,37 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{ .Title }}</title>
-        <link rel="stylesheet" href="/static/problem_style.css">
-    </head>
-    <body>
+{{ define "title" }}Problems List{{ end }}
 
-        <div class="container">
-
-            <!-- Problem Header -->
-            <header class="problem-header">
-                <h1>{{ .Title }}</h1>
-                <p><strong>Problem ID:</strong> {{ .Id }}</p>
-                <p><strong>Problem Name:</strong> {{ .ProblemName }}</p>
-            </header>
-
-            <!-- Problem Details -->
-            <section class="problem-details">
-                <h2>Problem Statement</h2>
-                <div class="statement">
-                    <p>{{ .Statement }}</p>
-                </div>
-
-                <h2>Constraints</h2>
-                <div class="constraints">
-                    <p><strong>Time Limit:</strong> {{ .TimeLimit }}</p>
-                    <p><strong>Memory Limit:</strong> {{ .MemoryLimit }}</p>
-                </div>
-            </section>
-
+{{ define "content" }}
+<section class="problem-details">
+    <h2>{{ .ProblemTitle }}</h2>
+    <div class="problem-info">
+        <table>
+            <tbody>
+                <tr>
+                    <th>Problem ID</th>
+                    <td>{{ .ProblemId }}</td>
+                </tr>
+                <tr>
+                    <th>Time Limit</th>
+                    <td>{{ .ProblemTimeLimit }} ms</td>
+                </tr>
+                <tr>
+                    <th>Memory Limit</th>
+                    <td>{{ .ProblemMemoryLimit }} MB</td>
+                </tr>
+                {{ if .IsClientAdmin }}
+                <tr>
+                    <th>Admin</th>
+                    <td>{{ .ClientUsername }}</td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+        <div class="problem-statement">
+            <h3>Problem Statement</h3>
+            <p>{{ .ProblemStatement }}</p>
         </div>
-
-    </body>
-</html>
+    </div>
+</section>
+{{ end }}
