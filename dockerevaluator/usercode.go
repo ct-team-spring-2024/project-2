@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func run() {
+func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 
@@ -22,7 +22,7 @@ func run() {
 	num1, _ := strconv.Atoi(parts[0])
 	num2, _ := strconv.Atoi(parts[1])
 
-	sum := num1 + num2
+	sum := num1 / num2
 
 	time.Sleep(2 * time.Second)
 	fmt.Printf("Sum: %d\n", sum)

@@ -39,16 +39,6 @@ func EvalCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if evalRequest.Code == "" {
-		http.Error(w, "Code field is required", http.StatusBadRequest)
-		return
-	}
-	if evalRequest.Timeout <= 0 {
-		http.Error(w, "Timeout must be a positive integer", http.StatusBadRequest)
-		return
-	}
-
-	// Simulate code evaluation with a timeout
 	result, outputs := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs, time.Duration(evalRequest.Timeout) * time.Millisecond)
 	logrus.Infof("result and outputs => %+v \n %+v", result, outputs)
 

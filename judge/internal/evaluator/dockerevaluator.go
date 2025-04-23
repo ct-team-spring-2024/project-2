@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -22,11 +21,6 @@ func NewDockerEvaluator() *DockerEvaluator {
 }
 
 func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Duration) (Result, []string) {
-	// start the container with the given code
-	// for each of the input:
-	// wait for the result. we should get the result as soon as it is ready.
-	// if the result wasn't ready, the string will be "timeout"
-	// return Result{}, inputs
 	// Step 1: Create a temporary directory for inputs
 	inputTempDir, err := os.MkdirTemp("", "inputs")
 	outputTempDir, err := os.MkdirTemp("", "outputs")
@@ -38,7 +32,6 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Du
 
 	userCodeFolderPath, err := os.MkdirTemp("", "usercode")
 	userCodeFilePath := fmt.Sprintf("%s/usercode.go", userCodeFolderPath) // Create usercode.go in the current directory
-	code = strings.Replace(code, "func main()", "func run()", 1) // Replace func main() with func run()
 	err = os.WriteFile(userCodeFilePath, []byte(code), 0644)
 	if err != nil {
 		return Result{Error: fmt.Errorf("failed to write usercode.go: %v", err)}, nil
@@ -67,7 +60,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Du
 	logrus.Infof("KKK %s", userCodeFilePath)
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
-		Cmd:   []string{"go", "run", "main.go", "usercode.go"},
+		Cmd:   []string{"go", "run", "main.go"},
 	}, &container.HostConfig{
 		Binds: []string{
 			fmt.Sprintf("%s:/app/inputs", inputTempDir),
