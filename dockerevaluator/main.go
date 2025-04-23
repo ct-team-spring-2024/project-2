@@ -134,9 +134,7 @@ func main() {
 		cmd.Stdout = outFile
 
 		// Start the command with timeout
-		logrus.Info("SS")
 		err = cmd.Start()
-		logrus.Info("EE")
 		if err != nil {
 			logrus.Errorf("Error starting usercode for input %s: %v", inputFile, err)
 			result.Tests[fileID] = "runtimeerror"
