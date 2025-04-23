@@ -134,12 +134,15 @@ func main() {
 		cmd.Stdout = outFile
 
 		// Start the command with timeout
+		logrus.Info("SS")
 		err = cmd.Start()
+		logrus.Info("EE")
 		if err != nil {
 			logrus.Errorf("Error starting usercode for input %s: %v", inputFile, err)
 			result.Tests[fileID] = "runtimeerror"
 			continue
 		}
+
 
 		// Create a channel to signal timeout
 		done := make(chan error, 1)
@@ -161,7 +164,7 @@ func main() {
 				result.Tests[fileID] = "ok"
 				logrus.Infof("Successfully processed input %s to %s", inputFile, outputFile)
 			}
-		case <-time.After(time.Duration(timeoutSeconds) * time.Second):
+		case <-time.After(time.Duration(timeoutSeconds) * time.Millisecond):
 			cmd.Process.Kill()
 			logrus.Errorf("Timeout for input %s after %d seconds", inputFile, timeoutSeconds)
 			result.Tests[fileID] = "timelimiterror"
