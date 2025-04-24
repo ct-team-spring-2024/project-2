@@ -445,7 +445,6 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
 			return
 		}
-		logrus.Info(string(body))
 
 		var result []apiResponseDataType
 		if err := json.Unmarshal(body, &result); err != nil {
@@ -455,7 +454,6 @@ func main() {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
 			return
 		}
-		logrus.Info(result)
 		problems := make([]frontend.ProblemSummary, 0)
 
 		n := len(result)
@@ -525,24 +523,67 @@ func main() {
 		c.HTML(http.StatusOK, "edit-problem", editProblemPageData)
 	})
 	router.GET("/manage-problems", func(c *gin.Context) {
+		type apiResponseDataType struct {
+			ProblemId   int    `json:"problemId"`
+			OwnerId     int    `json:"ownerId"`
+			Title       string `json:"title"`
+			TimeLimit   int    `json:"timeLimit"`
+			Status      string `json:"status"`
+			MemoryLimit int    `json:"memoryLimit"`
+			PublishDate string `json:"publishDate"`
+		}
+		type apiRequestDataType struct {
+		}
+
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
-		problems := []frontend.ProblemSummary{
-			{
-				Id:     "1",
-				Title:  "Two Sum",
-				Status: "published",
-			},
-			{
-				Id:     "2",
-				Title:  "Fibonacci Sequence",
-				Status: "draft",
-			},
-			{
-				Id:     "3",
-				Title:  "Binary Search",
-				Status: "published",
-			},
+
+		token := session.Values["jwt"].(string)
+		allProblemsUrl := fmt.Sprintf("%v/admin/problems", backendUrl)
+
+		req, err := http.NewRequest("GET", allProblemsUrl, nil)
+
+		if err != nil {
+			logrus.Error("Error contacing the backend")
+			return
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+		logrus.Info(string(body))
+
+		var result []apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Result => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+		logrus.Info(result)
+		problems := make([]frontend.ProblemSummary, 0)
+
+		n := len(result)
+		for i := 0; i < n; i++ {
+			p := frontend.ProblemSummary{
+				Id:     strconv.Itoa(result[i].ProblemId),
+				Title:  result[i].Title,
+				Status: result[i].Status,
+			}
+			problems = append(problems, p)
 		}
 		pageData := frontend.ManageProblemsPageData{
 			Page:           "manage-problems",

@@ -8,6 +8,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/sirupsen/logrus"
+	"oj/goforces/internal/services"
 )
 
 type contextKey string
@@ -26,7 +27,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-		logrus.Info("Came here1")
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 			return []byte(jwtKey), nil
 		})
@@ -54,6 +54,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		ctx := context.WithValue(r.Context(), userContextKey, userId)
+
+		user, err := services.GetUserByID(userId)
+		if user.Role == "admin" {
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
 		logrus.Info(userId)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

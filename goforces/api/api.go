@@ -6,7 +6,6 @@ import (
 	"oj/goforces/internal/middlewares"
 )
 
-
 func SetupRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -16,16 +15,16 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("/profile/{username}", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetProfile)))
 	mux.Handle("/profile/update", middlewares.AuthMiddleware(http.HandlerFunc(controllers.UpdateProfile)))
 
-	mux.Handle("/admin/user", middlewares.AdminMiddleware(http.HandlerFunc(controllers.GetUserProfile)))
-	mux.Handle("/admin/user/role", middlewares.AdminMiddleware(http.HandlerFunc(controllers.UpdateUserRole)))
+	mux.Handle("/admin/user", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetUserProfile)))
+	mux.Handle("/admin/user/role", middlewares.AuthMiddleware(http.HandlerFunc(controllers.UpdateUserRole)))
 
 	mux.Handle("/problems", middlewares.AuthMiddleware(http.HandlerFunc(controllers.ProblemsHandler)))
 
 	mux.Handle("/problems/mine", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetMyProblems)))
 	mux.Handle("/problems/", http.HandlerFunc(controllers.GetProblemByID))
 
-	mux.Handle("/admin/problems", middlewares.AdminMiddleware(http.HandlerFunc(controllers.AdminGetAllProblems)))
-	mux.Handle("/admin/problems/status", middlewares.AdminMiddleware(http.HandlerFunc(controllers.AdminUpdateProblemStatus)))
+	mux.Handle("/admin/problems", middlewares.AuthMiddleware(http.HandlerFunc(controllers.AdminGetAllProblems)))
+	mux.Handle("/admin/problems/status", middlewares.AuthMiddleware(http.HandlerFunc(controllers.AdminUpdateProblemStatus)))
 
 	mux.Handle("/submit", middlewares.AuthMiddleware(http.HandlerFunc(controllers.CreateSubmission)))
 	mux.Handle("/submissions", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetMySubmissions)))

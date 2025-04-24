@@ -17,10 +17,10 @@ import (
 func initSystem() {
 	u1 := models.User{
 		UserId:   0,
-		Username: "testuser",
+		Username: "admin",
 		Email:    "testuser@email.com",
-		Password: "password123",
-		Role:     "user",
+		Password: "admin",
+		Role:     "admin",
 	}
 	services.RegisterUser(u1)
 	problem1 := models.Problem{
