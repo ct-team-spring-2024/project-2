@@ -62,6 +62,21 @@ func writeResultToJSON(result TestResult) {
 	logrus.Infof("Results written to result.json")
 }
 
+func readResultFromJSON() TestResult {
+	data, err := os.ReadFile("result.json")
+	if err != nil {
+		logrus.Error("failed to read file: %v", err)
+	}
+
+	var result TestResult
+	err = json.Unmarshal(data, &result)
+	if err != nil {
+		logrus.Error("failed to parse JSON: %v", err)
+	}
+
+	return result
+}
+
 func runTest(inputFile string, outputFile string, timeoutSeconds int) string {
 	logrus.Infof("IN OU => %s %s", inputFile, outputFile)
 	inFile, err := os.Open(inputFile)
@@ -121,13 +136,12 @@ func main() {
 	flag.StringVar(&testID, "test-id", "", "Run a single test with the given ID")
 	flag.Parse()
 
-	result := TestResult{
-		OverallResult: "OK",
-		Tests:         make(map[string]string),
-	}
-
 	// Step 0: Compile user code
 	if compileMode {
+		result := TestResult{
+			OverallResult: "OK",
+			Tests:         make(map[string]string),
+		}
 		err := compileUserCode()
 		if err != nil {
 			logrus.Errorf("Compilation error: %v", err)
@@ -143,8 +157,7 @@ func main() {
 	if testID != "" {
 		inputFile := "input.txt"
 		outputFile := "output.txt"
-
-		// Run the test
+		result := readResultFromJSON()
 		result.Tests[testID] = runTest(inputFile, outputFile, timeoutSeconds)
 		writeResultToJSON(result)
 		return

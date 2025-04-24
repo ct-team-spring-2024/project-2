@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
-	// "strconv"
+	"strconv"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -22,7 +22,7 @@ func NewDockerEvaluator() *DockerEvaluator {
 	return &DockerEvaluator{}
 }
 
-func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Duration) (Result, []string) {
+func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.Duration, memorylimit int) (Result, []string) {
 	userCodeFolderPath, err := os.MkdirTemp("", "usercode")
 	userCodeFilePath := fmt.Sprintf("%s/usercode.go", userCodeFolderPath)
 	err = os.WriteFile(userCodeFilePath, []byte(code), 0644)
@@ -77,7 +77,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Du
 			fmt.Sprintf("%s:/app/output.txt", outputFilePath),
 		},
 		Resources: container.Resources{
-			Memory: 1000 * 1024 * 1024,
+			Memory: int64(memorylimit * 1024 * 1024),
 		},
 	}, nil, nil, "")
 	if err != nil {
@@ -102,52 +102,53 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Du
 		return Result{Error: fmt.Errorf("failed to read compile_result.json: %v", err)}, nil
 	}
 
-	var compileResult map[string]interface{}
-	err = json.Unmarshal(resultContent, &compileResult)
-	logrus.Infof("compileResult => %+v", compileResult)
+	var result map[string]interface{}
+	err = json.Unmarshal(resultContent, &result)
+	logrus.Infof("compileResult => %+v", result)
 	if err != nil {
 		return Result{Error: fmt.Errorf("failed to parse compile_result.json: %v", err)}, nil
 	}
 
 	// Check overall_result
-	if compileResult["overall_result"] == "compile_error" {
+	if result["overall_result"] == "compileerror" {
 		return Result{Error: fmt.Errorf("compilation failed")}, nil
 	}
 
 	// // Step 5: Run tests for each input
 	var aggregatedResults []string
-	// for i, input := range inputs {
-	//	// Write input to input.txt
-	//	err := os.WriteFile(inputFilePath, []byte(input), 0644)
-	//	if err != nil {
-	//		return Result{Error: fmt.Errorf("failed to write input file: %v", err)}, nil
-	//	}
+	for i, input := range inputs {
+		// Write input to input.txt
+		logrus.Infof("input => %s", input)
+		err := os.WriteFile(inputFilePath, []byte(input), 0644)
+		if err != nil {
+			return Result{Error: fmt.Errorf("failed to write input file: %v", err)}, nil
+		}
 
 
-	//	cmd := exec.Command("docker", "exec", resp.ID, "go", "run", "/app/main.go", "--test-id", strconv.Itoa(i+1))
-	//	output, err := cmd.CombinedOutput()
+		cmd := exec.Command("docker", "exec", resp.ID, "go", "run", "/app/main.go", "--test-id", strconv.Itoa(i+1))
+		output, err := cmd.CombinedOutput()
 
-	//	inspectResp, inspectErr := cli.ContainerInspect(ctx, resp.ID)
-	//	if inspectErr != nil {
-	//		return Result{Error: fmt.Errorf("failed to inspect container: %v", inspectErr)}, nil
-	//	}
+		inspectResp, inspectErr := cli.ContainerInspect(ctx, resp.ID)
+		if inspectErr != nil {
+			return Result{Error: fmt.Errorf("failed to inspect container: %v", inspectErr)}, nil
+		}
 
-	//	if inspectResp.State.OOMKilled {
-	//		aggregatedResults = append(aggregatedResults, fmt.Sprintf("Test %d: Memory limit exceeded", i+1))
-	//		continue
-	//	}
+		if inspectResp.State.OOMKilled {
+			aggregatedResults = append(aggregatedResults, fmt.Sprintf("Test %d: Memory limit exceeded", i+1))
+			continue
+		}
 
-	//	if err != nil {
-	//		aggregatedResults = append(aggregatedResults, fmt.Sprintf("Test %d: Execution failed: %v, output: %s", i+1, err, string(output)))
-	//		continue
-	//	}
+		if err != nil {
+			aggregatedResults = append(aggregatedResults, fmt.Sprintf("Test %d: Execution failed: %v, output: %s", i+1, err, string(output)))
+			continue
+		}
 
-	//	outputContent, err := os.ReadFile(outputFilePath)
-	//	if err != nil {
-	//		return Result{Error: fmt.Errorf("failed to read output file for test %d: %v", i+1, err)}, nil
-	//	}
-	//	aggregatedResults = append(aggregatedResults, fmt.Sprintf("Test %d: %s", i+1, string(outputContent)))
-	// }
+		outputContent, err := os.ReadFile(outputFilePath)
+		if err != nil {
+			return Result{Error: fmt.Errorf("failed to read output file for test %d: %v", i+1, err)}, nil
+		}
+		aggregatedResults = append(aggregatedResults, fmt.Sprintf("Test %d: %s", i+1, string(outputContent)))
+	}
 
 	// err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{})
 	// if err != nil {
@@ -155,6 +156,13 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timeout time.Du
 	// }
 
 	// Return the final result
+	resultContent, err = os.ReadFile(resultFilePath)
+	if err != nil {
+		return Result{Error: fmt.Errorf("failed to read compile_result.json: %v", err)}, nil
+	}
+	err = json.Unmarshal(resultContent, &result)
+	logrus.Infof("compileResult => %+v", result)
+
 	return Result{Output: "Evaluation completed"}, aggregatedResults
 }
 

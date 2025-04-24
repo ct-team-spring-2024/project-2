@@ -39,7 +39,9 @@ func EvalCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, outputs := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs, time.Duration(evalRequest.Timeout) * time.Millisecond)
+	result, outputs := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs,
+		time.Duration(evalRequest.Timelimit)*time.Millisecond,
+		evalRequest.Memorylimit)
 	logrus.Infof("result and outputs => %+v \n %+v", result, outputs)
 
 	// Respond with the result
