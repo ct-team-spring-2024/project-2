@@ -1,0 +1,76 @@
+{{ define "title" }}Profile - My Website{{ end }}
+
+{{ define "content" }}
+<div class="container">
+
+    <!-- Section 1: User Information -->
+    <section class="user-info">
+        <h1>Welcome, <span class="username">{{ .Username }}</span></h1>
+        <div class="user-details">
+            <p><strong>Username:</strong> {{ .Username }}</p>
+            <p><strong>Email:</strong> {{ .Email }}</p>
+            <p><strong>Member Since:</strong> {{ .MemberSince }}</p>
+            <!-- Role Section -->
+            <p><strong>Role:</strong>
+                {{ if .IsUserAdmin }}
+                Admin
+                {{ else }}
+                User
+                {{ end }}
+            </p>
+
+            <!-- Button for Upgrading/Downgrading Role -->
+            {{ if .IsClientAdmin }}
+            <div class="role-button">
+                <button>
+                    {{ if .IsUserAdmin }}
+                    Degrade to User
+                    {{ else }}
+                    Upgrade to Admin
+                    {{ end }}
+                </button>
+            </div>
+            {{ end }}
+        </div>
+    </section>
+
+    <!-- Section 2: Overall Statistics -->
+    <section class="statistics">
+        <h2>Overall Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <p><strong>Total Submissions:</strong> {{ .TotalSubmissions }}</p>
+            </div>
+            <div class="stat-item">
+                <p><strong>Solved Problems:</strong> {{ .SolvedProblems }}</p>
+            </div>
+            <div class="stat-item">
+                <p><strong>Solve Rate:</strong> {{ .SolveRate }}%</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Problem Submissions and Evaluation Status -->
+    <section class="problem-submissions">
+        <h2>Problem Submissions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Problem Name</th>
+                    <th>Status</th>
+                    <th>Submission Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Submissions }}
+                <tr>
+                    <td>{{ .ProblemName }}</td>
+                    <td>{{ .Status }}</td>
+                    <td>{{ .SubmissionDate }}</td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </section>
+</div>
+{{ end }}

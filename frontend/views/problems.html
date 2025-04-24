@@ -1,0 +1,25 @@
+{{ define "title" }}Problems List{{ end }}
+
+{{ define "content" }}
+<section class="problem-list">
+    <h2>Problem List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Problem Name</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Problems }}
+            <tr>
+                <td><a href="/problem/{{ .Id }}">{{ .Id }}</a></td>
+                <td>{{ .Title }}</td>
+                <td>{{ .Status }}</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</section>
+{{ end }}

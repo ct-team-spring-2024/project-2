@@ -1,0 +1,46 @@
+{{ define "title" }}Add Problem{{ end }}
+
+{{ define "content" }}
+<div class="container">
+    <!-- Section: Add New Problem -->
+    <section class="add-problem">
+        <h1>Add New Problem</h1>
+        <form id="addProblemForm" action="/add-problem" method="POST" enctype="multipart/form-data">
+            <!-- Problem Title -->
+            <div class="form-group">
+                <label for="problemTitle"><strong>Problem Title:</strong></label>
+                <input type="text" id="problemTitle" name="problemTitle" placeholder="Enter problem title" required>
+            </div>
+
+            <!-- Time Limit -->
+            <div class="form-group">
+                <label for="timeLimit"><strong>Time Limit (ms):</strong></label>
+                <input type="number" id="timeLimit" name="timeLimit" placeholder="Enter time limit in milliseconds" min="1" required>
+            </div>
+
+            <!-- Memory Limit -->
+            <div class="form-group">
+                <label for="memoryLimit"><strong>Memory Limit (MB):</strong></label>
+                <input type="number" id="memoryLimit" name="memoryLimit" placeholder="Enter memory limit in megabytes" min="1" required>
+            </div>
+
+            <!-- Problem Description -->
+            <div class="form-group">
+                <label for="problemDescription"><strong>Problem Description (Markdown):</strong></label>
+                <textarea id="problemDescription" name="problemDescription" rows="10" placeholder="Enter problem description in Markdown" required></textarea>
+            </div>
+
+            <!-- Test Case File Upload -->
+            <div class="form-group">
+                <label for="testCaseFile"><strong>Test Case File:</strong></label>
+                <input type="file" id="testCaseFile" name="testCaseFile" accept=".txt" required>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-group">
+                <button type="submit">Add Problem</button>
+            </div>
+        </form>
+    </section>
+</div>
+{{ end }}
