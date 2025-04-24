@@ -1,14 +1,14 @@
 package internal
 
 type User struct {
-	UserId   int64
+	UserId   int
 	Username string
 	Password string
 }
 
-func NewUser(userId int64, username string, password string) *User {
+func NewUser(userId int, username string, password string) *User {
 	return &User{
-		UserId: userId,
+		UserId:   userId,
 		Username: username,
 		Password: password,
 	}

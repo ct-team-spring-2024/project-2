@@ -128,7 +128,6 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 	// // Step 5: Run tests for each input
 	var aggregatedResults []string
 	// TODO Delete
-	time.Sleep(20 * time.Second)
 	for i, input := range inputs {
 		// Write input to input.txt
 		logrus.Infof("input => %s", input)

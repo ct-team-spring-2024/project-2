@@ -1,0 +1,156 @@
+.container {
+   max-width: 1200px;
+   margin: 0 auto;
+   background: #fff;
+   padding: 20px;
+   border-radius: 8px;
+   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+   color: #333;
+   margin-bottom: 15px;
+}
+
+section {
+   margin-bottom: 30px;
+}
+
+/* Section 1: User Information */
+.user-info {
+   text-align: center;
+   padding: 20px;
+   background: #f0f8ff;
+   border-radius: 8px;
+   border: 1px solid #ddd;
+}
+
+.user-info .username {
+   color: #007bff;
+   font-weight: bold;
+}
+
+.user-details p {
+   margin: 5px 0;
+}
+
+/* Role Button Styles */
+.role-button {
+   margin-top: 15px;
+   text-align: center;
+}
+
+.role-button button {
+   padding: 10px 20px;
+   font-size: 16px;
+   font-weight: bold;
+   color: #fff;
+   background-color: #007bff;
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+   transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.role-button button:hover {
+   background-color: #0056b3;
+   transform: scale(1.05);
+}
+
+.role-button button:active {
+   transform: scale(0.95);
+}
+
+/* Section 2: Overall Statistics */
+.statistics {
+   padding: 20px;
+   background: #f8f9fa;
+   border-radius: 8px;
+   border: 1px solid #ddd;
+}
+
+.stats-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+   gap: 20px;
+}
+
+.stat-item {
+   background: #e9ecef;
+   padding: 15px;
+   border-radius: 8px;
+   text-align: center;
+   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-item p {
+   font-size: 18px;
+   font-weight: bold;
+}
+
+.stat-item strong {
+   display: block;
+   font-size: 14px;
+   color: #6c757d;
+   margin-bottom: 5px;
+}
+
+/* Section 3: Problem Submissions */
+.problem-submissions {
+   padding: 20px;
+   background: #f8f9fa;
+   border-radius: 8px;
+   border: 1px solid #ddd;
+}
+
+table {
+   width: 100%;
+   border-collapse: collapse;
+   margin-top: 10px;
+}
+
+table th,
+table td {
+   padding: 12px;
+   text-align: left;
+   border-bottom: 1px solid #ddd;
+}
+
+table th {
+   background: #007bff;
+   color: #fff;
+   font-weight: bold;
+}
+
+table tr:nth-child(even) {
+   background-color: #f9f9f9;
+}
+
+table tr:hover {
+   background-color: #f1f1f1;
+}
+
+/* Pagination Controls */
+.pagination {
+   margin-top: 20px;
+   text-align: center;
+}
+
+.pagination a {
+   display: inline-block;
+   padding: 10px 15px;
+   background: #007bff;
+   color: #fff;
+   text-decoration: none;
+   border-radius: 5px;
+   margin: 0 5px;
+}
+
+.pagination a:hover {
+   background: #0056b3;
+}
+
+.pagination span {
+   margin: 0 10px;
+   font-size: 16px;
+}
