@@ -31,7 +31,7 @@ type ProfilePageData struct {
 }
 
 type ProblemPageProblemSummary struct {
-	Id int
+	Id    int
 	Title string
 }
 
@@ -61,7 +61,6 @@ type SingleProblemPageData struct {
 	ProblemTitle       string
 	ProblemTimeLimit   int
 	ProblemMemoryLimit int
-
 }
 
 type ProblemSummary struct {

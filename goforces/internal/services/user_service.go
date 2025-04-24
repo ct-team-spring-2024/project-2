@@ -16,7 +16,7 @@ var (
 	users     = make([]models.User, 0, 0)
 	userMutex = &sync.Mutex{}
 	// TODO: use uuid
-	userIDCounter = 1
+	userIDCounter = 0
 
 	jwtKey = []byte("your_secret_key")
 )
@@ -49,7 +49,8 @@ func RegisterUser(u models.User) (models.User, error) {
 	}
 
 	u.UserId = userIDCounter
-	userIDCounter++
+	//TODO : this must be synced
+	//userIDCounter++
 	// TODO: hash the password
 	users = append(users, u)
 	return u, nil

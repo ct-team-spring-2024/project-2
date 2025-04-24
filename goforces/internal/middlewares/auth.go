@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/sirupsen/logrus"
 )
 
 type contextKey string
@@ -25,6 +26,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+		logrus.Info("Came here1")
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 			return []byte(jwtKey), nil
 		})
@@ -42,6 +44,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		userIdStr, ok := claims["sub"].(string)
 		if !ok {
 			http.Error(w, "Invalid token subject", http.StatusUnauthorized)
+
 			return
 		}
 
@@ -50,8 +53,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Invalid user id in token", http.StatusUnauthorized)
 			return
 		}
-
 		ctx := context.WithValue(r.Context(), userContextKey, userId)
+		logrus.Info(userId)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

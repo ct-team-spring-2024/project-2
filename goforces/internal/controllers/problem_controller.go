@@ -9,6 +9,8 @@ import (
 	"oj/goforces/internal/middlewares"
 	"oj/goforces/internal/models"
 	"oj/goforces/internal/services"
+
+	"github.com/sirupsen/logrus"
 )
 
 func CreateProblem(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +64,7 @@ func GetMyProblems(w http.ResponseWriter, r *http.Request) {
 	problems := services.GetMyProblems(userID)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(problems)
+	logrus.Info(problems)
 }
 
 func GetPublishedProblems(w http.ResponseWriter, r *http.Request) {

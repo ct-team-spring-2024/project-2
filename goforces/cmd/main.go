@@ -16,12 +16,13 @@ import (
 
 func initSystem() {
 	u1 := models.User{
-		UserId: 0,
+		UserId:   0,
 		Username: "testuser",
-		Email: "testuser@email.com",
+		Email:    "testuser@email.com",
 		Password: "password123",
-		Role: "user",
+		Role:     "user",
 	}
+	services.RegisterUser(u1)
 	problem1 := models.Problem{
 		ProblemId:   1,
 		OwnerId:     u1.UserId,
@@ -35,7 +36,7 @@ func initSystem() {
 		Feedback:    "HA?",
 		PublishDate: time.Now(),
 	}
-	services.RegisterUser(u1)
+
 	services.CreateProblem(problem1)
 }
 

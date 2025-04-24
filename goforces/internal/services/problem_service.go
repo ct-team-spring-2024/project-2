@@ -55,7 +55,11 @@ func GetMyProblems(ownerId int) []models.Problem {
 
 	var userProblems []models.Problem
 	for _, p := range problemsStore {
+		logrus.Info(p)
+		logrus.Info(p.OwnerId)
+		logrus.Info(ownerId)
 		if p.OwnerId == ownerId {
+			logrus.Info(p)
 			userProblems = append(userProblems, p)
 		}
 	}

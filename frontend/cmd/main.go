@@ -204,17 +204,17 @@ func main() {
 			PageSize int `json:"pagesize"`
 		}
 		type apiResponseDataType struct {
-			ProblemId    int       `json:"problemId"`
-			OwnerId      int       `json:"ownerId"`
-			Title        string    `json:"title"`
-			Statement    string    `json:"statement"`
-			TimeLimit    int       `json:"timeLimit"`
-			MemoryLimit  int       `json:"memoryLimit"`
-			Input        string    `json:"input"`
-			Output       string    `json:"output"`
-			Status       string    `json:"status"`
-			Feedback     string    `json:"feedback"`
-			PublishDate  string    `json:"publishDate"`
+			ProblemId   int    `json:"problemId"`
+			OwnerId     int    `json:"ownerId"`
+			Title       string `json:"title"`
+			Statement   string `json:"statement"`
+			TimeLimit   int    `json:"timeLimit"`
+			MemoryLimit int    `json:"memoryLimit"`
+			Input       string `json:"input"`
+			Output      string `json:"output"`
+			Status      string `json:"status"`
+			Feedback    string `json:"feedback"`
+			PublishDate string `json:"publishDate"`
 		}
 
 		session, _ := store.Get(c.Request, "session-name")
@@ -223,10 +223,9 @@ func main() {
 		pageNo, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 		pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-
 		problemsUrl := fmt.Sprintf("%s/problems", backendUrl)
 		apiRequestData := apiRequestDataType{
-			PageNo: pageNo,
+			PageNo:   pageNo,
 			PageSize: pageSize,
 		}
 		apiRequestBytes, err := json.Marshal(apiRequestData)
@@ -268,7 +267,7 @@ func main() {
 		problems := make([]frontend.ProblemPageProblemSummary, 0, 0)
 		for _, p := range result {
 			problems = append(problems, frontend.ProblemPageProblemSummary{
-				Id: p.ProblemId,
+				Id:    p.ProblemId,
 				Title: p.Title,
 			})
 		}
@@ -287,17 +286,17 @@ func main() {
 
 	router.GET("/problem/:problemid", func(c *gin.Context) {
 		type apiResponseDataType struct {
-			ProblemId    int       `json:"problemId"`
-			OwnerId      int       `json:"ownerId"`
-			Title        string    `json:"title"`
-			Statement    string    `json:"statement"`
-			TimeLimit    int       `json:"timeLimit"`
-			MemoryLimit  int       `json:"memoryLimit"`
-			Input        string    `json:"input"`
-			Output       string    `json:"output"`
-			Status       string    `json:"status"`
-			Feedback     string    `json:"feedback"`
-			PublishDate  string    `json:"publishDate"`
+			ProblemId   int    `json:"problemId"`
+			OwnerId     int    `json:"ownerId"`
+			Title       string `json:"title"`
+			Statement   string `json:"statement"`
+			TimeLimit   int    `json:"timeLimit"`
+			MemoryLimit int    `json:"memoryLimit"`
+			Input       string `json:"input"`
+			Output      string `json:"output"`
+			Status      string `json:"status"`
+			Feedback    string `json:"feedback"`
+			PublishDate string `json:"publishDate"`
 		}
 
 		session, _ := store.Get(c.Request, "session-name")
@@ -406,25 +405,86 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"message": "Problem data received and printed"})
 	})
 	router.GET("/my-problems", func(c *gin.Context) {
+		type apiResponseDataType struct {
+			ProblemId   int    `json:"problemId"`
+			OwnerId     int    `json:"ownerId"`
+			Title       string `json:"title"`
+			TimeLimit   int    `json:"timeLimit"`
+			Status      string `json:"status"`
+			MemoryLimit int    `json:"memoryLimit"`
+			PublishDate string `json:"publishDate"`
+		}
+		type apiRequestDataType struct {
+		}
+
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
-		problems := []frontend.ProblemSummary{
-			{
-				Id:     "1",
-				Title:  "Two Sum",
-				Status: "published",
-			},
-			{
-				Id:     "2",
-				Title:  "Fibonacci Sequence",
-				Status: "draft",
-			},
-			{
-				Id:     "3",
-				Title:  "Binary Search",
-				Status: "published",
-			},
+
+		token := session.Values["jwt"].(string)
+		myProblemsurl := fmt.Sprintf("%v/problems/mine", backendUrl)
+
+		req, err := http.NewRequest("GET", myProblemsurl, nil)
+
+		if err != nil {
+			logrus.Error("Error contacing the backend")
+			return
 		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+		logrus.Info(string(body))
+
+		var result []apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Result => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+		logrus.Info(result)
+		problems := make([]frontend.ProblemSummary, 0)
+
+		n := len(result)
+		for i := 0; i < n; i++ {
+			p := frontend.ProblemSummary{
+				Id:     strconv.Itoa(result[i].ProblemId),
+				Title:  result[i].Title,
+				Status: result[i].Status,
+			}
+			problems = append(problems, p)
+		}
+
+		// problems := []frontend.ProblemSummary{
+		// 	{
+		// 		Id:     "1",
+		// 		Title:  "Two Sum",
+		// 		Status: "published",
+		// 	},
+		// 	{
+		// 		Id:     "2",
+		// 		Title:  "Fibonacci Sequence",
+		// 		Status: "draft",
+		// 	},
+		// 	{
+		// 		Id:     "3",
+		// 		Title:  "Binary Search",
+		// 		Status: "published",
+		// 	},
+		// }
 		pageData := frontend.MyProblemsPageData{
 			Page:           "my-problems",
 			ClientUsername: clientUsername,
