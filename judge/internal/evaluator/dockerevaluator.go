@@ -31,6 +31,15 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 	}
 	defer os.RemoveAll(userCodeFolderPath)
 
+	configFolderPath, err := os.MkdirTemp("", "config")
+	configFilePath := fmt.Sprintf("%s/config.txt", configFolderPath)
+	err = os.WriteFile(configFilePath, []byte(fmt.Sprintf("timeout=%d", timelimit.Milliseconds())), 0644)
+	if err != nil {
+		return Result{Error: fmt.Errorf("failed to write config: %v", err)}, nil
+	}
+	defer os.RemoveAll(configFolderPath)
+
+
 	resultFolderPath, err := os.MkdirTemp("", "result")
 	resultFilePath := fmt.Sprintf("%s/result.json", resultFolderPath)
 	err = os.WriteFile(resultFilePath, []byte("{}"), 0644)
@@ -72,12 +81,14 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 	}, &container.HostConfig{
 		Binds: []string{
 			fmt.Sprintf("%s:/app/usercode.go", userCodeFilePath),
+			fmt.Sprintf("%s:/app/config.txt", configFilePath),
 			fmt.Sprintf("%s:/app/result.json", resultFilePath),
 			fmt.Sprintf("%s:/app/input.txt", inputFilePath),
 			fmt.Sprintf("%s:/app/output.txt", outputFilePath),
 		},
 		Resources: container.Resources{
 			Memory: int64(memorylimit * 1024 * 1024),
+			MemorySwap: int64(memorylimit * 1024 * 1024),
 		},
 	}, nil, nil, "")
 	if err != nil {
@@ -116,6 +127,8 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 
 	// // Step 5: Run tests for each input
 	var aggregatedResults []string
+	// TODO Delete
+	time.Sleep(20 * time.Second)
 	for i, input := range inputs {
 		// Write input to input.txt
 		logrus.Infof("input => %s", input)
@@ -135,6 +148,12 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 
 		if inspectResp.State.OOMKilled {
 			aggregatedResults = append(aggregatedResults, fmt.Sprintf("Test %d: Memory limit exceeded", i+1))
+			// Restart the container
+			logrus.Infof("Restarting container due to OOMKilled...")
+			err = cli.ContainerRestart(ctx, resp.ID, container.StopOptions{})
+			if err != nil {
+				return Result{Error: fmt.Errorf("failed to restart container: %v", err)}, nil
+			}
 			continue
 		}
 

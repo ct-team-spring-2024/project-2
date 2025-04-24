@@ -30,7 +30,7 @@ func main() {
 
 	memory := make([]byte, megabytes*1024*1024)
 	for i := range memory {
-		memory[i] = 0
+		memory[i] = byte(i % 8)
 	}
 
 	sum := num1 / num2
