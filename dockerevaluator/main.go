@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
-	"encoding/json"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -19,10 +19,10 @@ type TestResult struct {
 	Tests         map[string]string `json:"test_n"`
 }
 
-func readTimeout(configFile string) (int, error) {
+func readTimeout(configFile string) int {
 	file, err := os.Open(configFile)
 	if err != nil {
-		return 0, err
+		return -1
 	}
 	defer file.Close()
 
@@ -31,11 +31,11 @@ func readTimeout(configFile string) (int, error) {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "timeout=") {
 			value := strings.TrimPrefix(line, "timeout=")
-			return strconv.Atoi(value)
+			result, _ := strconv.Atoi(value)
+			return result
 		}
 	}
-
-	return 0, fmt.Errorf("timeout not found in config file")
+	return -1
 }
 
 func compileUserCode() error {
@@ -62,9 +62,64 @@ func writeResultToJSON(result TestResult) {
 	logrus.Infof("Results written to result.json")
 }
 
+func runTest(inputFile string, outputFile string, timeoutSeconds int) string {
+	logrus.Infof("IN OU => %s %s", inputFile, outputFile)
+	inFile, err := os.Open(inputFile)
+	outFile, err := os.Create(outputFile)
+	if err != nil {
+		logrus.Errorf("Error creating output file %s: %v", outputFile, err)
+		return "runtimeerror"
+	}
+	defer outFile.Close()
+
+	// Run usercode binary with input file as stdin and timeout
+	cmd := exec.Command("./usercode")
+	cmd.Stdin = inFile
+	cmd.Stdout = outFile
+
+	// Start the command with timeout
+	err = cmd.Start()
+	if err != nil {
+		logrus.Errorf("Error starting usercode for input %s: %v", inputFile, err)
+		return "runtimeerror"
+	}
+
+	// Create a channel to signal timeout
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	// Wait for either completion or timeout
+	select {
+	case err := <-done:
+		if err != nil {
+			logrus.Errorf("Error running usercode for input %s: %v", inputFile, err)
+			if strings.Contains(err.Error(), "signal: killed") {
+				return "memorylimit"
+			}
+			return "runtimeerror"
+		}
+		logrus.Infof("Successfully processed input %s to %s", inputFile, outputFile)
+		return "ok"
+	case <-time.After(time.Duration(timeoutSeconds) * time.Millisecond):
+		cmd.Process.Kill()
+		logrus.Errorf("Timeout for input %s after %d seconds", inputFile, timeoutSeconds)
+		return "timelimiterror"
+	}
+}
+
+var timeoutSeconds int = readTimeout("config.txt")
+
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
 	logrus.SetFormatter(&logrus.TextFormatter{})
+
+	var compileMode bool
+	var testID string
+	flag.BoolVar(&compileMode, "compile", false, "Compile the user code")
+	flag.StringVar(&testID, "test-id", "", "Run a single test with the given ID")
+	flag.Parse()
 
 	result := TestResult{
 		OverallResult: "OK",
@@ -72,103 +127,26 @@ func main() {
 	}
 
 	// Step 0: Compile user code
-	err := compileUserCode()
-	if err != nil {
-		logrus.Errorf("Compilation error: %v", err)
-		result.OverallResult = "compileerror"
-		// Write result to JSON file
-		writeResultToJSON(result)
+	if compileMode {
+		err := compileUserCode()
+		if err != nil {
+			logrus.Errorf("Compilation error: %v", err)
+			result.OverallResult = "compileerror"
+			writeResultToJSON(result)
+		} else {
+			logrus.Infof("Compilation successful")
+			writeResultToJSON(result)
+		}
 		return
 	}
 
-	// Step 1: Read the timeout value from the config file
-	configFile := "config.txt"
-	timeoutSeconds, err := readTimeout(configFile)
-	if err != nil {
-		logrus.Errorf("Error reading config file: %v", err)
-		result.OverallResult = "runtimeerror"
+	if testID != "" {
+		inputFile := "input.txt"
+		outputFile := "output.txt"
+
+		// Run the test
+		result.Tests[testID] = runTest(inputFile, outputFile, timeoutSeconds)
 		writeResultToJSON(result)
 		return
 	}
-
-	// Step 2: Get all input files from the "inputs" directory
-	inputDir := "inputs"
-	outputDir := "outputs"
-	inputFiles, err := filepath.Glob(filepath.Join(inputDir, "*.txt"))
-	if err != nil {
-		logrus.Errorf("Error reading input files: %v", err)
-		result.OverallResult = "runtimeerror"
-		writeResultToJSON(result)
-		return
-	}
-
-	// Step 3: Process each input file
-	logrus.Infof("inputFiles => %v", inputFiles)
-	for _, inputFile := range inputFiles {
-		// Extract the file ID (e.g., "1.txt" -> "1")
-		fileID := strings.TrimSuffix(filepath.Base(inputFile), ".txt")
-		outputFile := fmt.Sprintf("%s/out_%s.txt", outputDir, fileID)
-		logrus.Infof("starting input file %s", fileID)
-
-		// Open input file
-		inFile, err := os.Open(inputFile)
-		if err != nil {
-			logrus.Errorf("Error opening input file %s: %v", inputFile, err)
-			result.Tests[fileID] = "runtimeerror"
-			continue
-		}
-		defer inFile.Close()
-
-		// Create output file
-		outFile, err := os.Create(outputFile)
-		if err != nil {
-			logrus.Errorf("Error creating output file %s: %v", outputFile, err)
-			result.Tests[fileID] = "runtimeerror"
-			continue
-		}
-		defer outFile.Close()
-
-		// Run usercode binary with input file as stdin and timeout
-		cmd := exec.Command("./usercode")
-		cmd.Stdin = inFile
-		cmd.Stdout = outFile
-
-		// Start the command with timeout
-		err = cmd.Start()
-		if err != nil {
-			logrus.Errorf("Error starting usercode for input %s: %v", inputFile, err)
-			result.Tests[fileID] = "runtimeerror"
-			continue
-		}
-
-
-		// Create a channel to signal timeout
-		done := make(chan error, 1)
-		go func() {
-			done <- cmd.Wait()
-		}()
-
-		// Wait for either completion or timeout
-		select {
-		case err := <-done:
-			if err != nil {
-				logrus.Errorf("Error running usercode for input %s: %v", inputFile, err)
-				if strings.Contains(err.Error(), "signal: killed") {
-					result.Tests[fileID] = "memorylimit"
-				} else {
-					result.Tests[fileID] = "runtimeerror"
-				}
-			} else {
-				result.Tests[fileID] = "ok"
-				logrus.Infof("Successfully processed input %s to %s", inputFile, outputFile)
-			}
-		case <-time.After(time.Duration(timeoutSeconds) * time.Millisecond):
-			cmd.Process.Kill()
-			logrus.Errorf("Timeout for input %s after %d seconds", inputFile, timeoutSeconds)
-			result.Tests[fileID] = "timelimiterror"
-		}
-	}
-
-	// Write result to JSON file
-	writeResultToJSON(result)
 }

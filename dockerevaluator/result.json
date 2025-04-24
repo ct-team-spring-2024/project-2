@@ -1,7 +1,6 @@
 {
   "overall_result": "OK",
   "test_n": {
-    "1": "runtimeerror",
-    "2": "timelimiterror"
+    "1": "ok"
   }
 }
