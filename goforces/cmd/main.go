@@ -57,7 +57,7 @@ func main() {
 
 	db.DB = db.NewXMockDB()
 	initSystem()
-
+	db.ConnectToDB()
 	serverAddress := fmt.Sprintf(":%d", port)
 	srv := &http.Server{
 		Addr:         serverAddress,
