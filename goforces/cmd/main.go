@@ -32,7 +32,7 @@ func initSystem() {
 		MemoryLimit: 2000,
 		Input:       "KIR",
 		Output:      "KHAR",
-		Status:      "published",
+		Status:      "Published",
 		Feedback:    "HA?",
 		PublishDate: time.Now(),
 	}
@@ -55,9 +55,9 @@ func main() {
 
 	port := cfg.Port
 
-	db.DB = db.NewXMockDB()
+	//db.DB = db.NewXMockDB()
+	db.DB = db.ConnectToDB()
 	initSystem()
-	db.ConnectToDB()
 	serverAddress := fmt.Sprintf(":%d", port)
 	srv := &http.Server{
 		Addr:         serverAddress,

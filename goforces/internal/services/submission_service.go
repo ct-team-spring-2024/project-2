@@ -14,7 +14,7 @@ func CreateSubmission(userId, problemId int, code, language string) (models.Subm
 	}
 
 	newSub := models.Submission{
-		ID:        submissionIdCounter,
+
 		UserId:    userId,
 		ProblemId: problemId,
 		Code:      code,

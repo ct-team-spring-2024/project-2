@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"oj/goforces/internal/db"
 	"oj/goforces/internal/models"
 
 	"github.com/dgrijalva/jwt-go"
@@ -13,7 +14,7 @@ import (
 
 var (
 	// users     = make(map[string]models.User)
-	users     = make([]models.User, 0, 0)
+
 	userMutex = &sync.Mutex{}
 	// TODO: use uuid
 	userIDCounter = 0
@@ -22,7 +23,7 @@ var (
 )
 
 func findWithEmail(email string) *models.User {
-	for _, u := range users {
+	for _, u := range db.DB.GetUsers() {
 		if u.Email == email {
 			return &u
 		}
@@ -31,7 +32,7 @@ func findWithEmail(email string) *models.User {
 }
 
 func findWithUsername(username string) *models.User {
-	for _, u := range users {
+	for _, u := range db.DB.GetUsers() {
 		if u.Username == username {
 			return &u
 		}
@@ -47,12 +48,10 @@ func RegisterUser(u models.User) (models.User, error) {
 	if user != nil {
 		return models.User{}, errors.New("user already exists")
 	}
-
-	u.UserId = userIDCounter
 	//TODO : this must be synced
 	//userIDCounter++
 	// TODO: hash the password
-	users = append(users, u)
+	db.DB.CreateUser(u)
 	return u, nil
 }
 
@@ -107,7 +106,7 @@ func generateToken(user models.User) (string, error) {
 func GetUserByID(id int) (models.User, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()
-	for _, user := range users {
+	for _, user := range db.DB.GetUsers() {
 		if user.UserId == id {
 			return user, nil
 		}
@@ -118,7 +117,7 @@ func GetUserByID(id int) (models.User, error) {
 func GetUserByUsername(username string) (models.User, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()
-	for _, user := range users {
+	for _, user := range db.DB.GetUsers() {
 		if user.Username == username {
 			return user, nil
 		}
@@ -129,7 +128,7 @@ func GetUserByUsername(username string) (models.User, error) {
 func UpdateUserProfile(id int, updated models.User) (models.User, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()
-	for email, user := range users {
+	for _, user := range db.DB.GetUsers() {
 		if user.UserId == id {
 
 			if updated.Username != "" {
@@ -142,7 +141,7 @@ func UpdateUserProfile(id int, updated models.User) (models.User, error) {
 			if updated.Role != "" {
 				user.Role = updated.Role
 			}
-			users[email] = user
+			db.DB.UpdateUsers(user.UserId, user)
 			return user, nil
 		}
 	}
