@@ -1,6 +1,8 @@
 package frontend
 
 type User struct {
-	Username       string
-	SolvedProblems []Problem
+	ID       int
+	Username string
+	Email    string
+	Role     string
 }

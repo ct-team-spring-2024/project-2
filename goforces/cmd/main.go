@@ -16,27 +16,34 @@ import (
 
 func initSystem() {
 	u1 := models.User{
-		UserId:   0,
 		Username: "admin",
-		Email:    "testuser@email.com",
+		Email:    "admin@email.com",
 		Password: "admin",
 		Role:     "admin",
 	}
+	u2 := models.User{
+		Username: "user",
+		Email:    "user@email.com",
+		Password: "user",
+		Role:     "user",
+	}
 	services.RegisterUser(u1)
+	userId2, _ := services.RegisterUser(u2)
 	problem1 := models.Problem{
-		ProblemId:   1,
-		OwnerId:     u1.UserId,
+		ProblemId:   0,
+		OwnerId:     userId2,
 		Title:       "problem 1 title",
 		Statement:   "This is a simple problem",
 		TimeLimit:   3000,
 		MemoryLimit: 500,
 		Inputs:      []string{"50 1 10", "50 1 600"},
 		Outputs:     []string{"51", "51"},
-		Status:      "published",
+		Status:      models.Published,
 		Feedback:    "HA?",
 		PublishDate: time.Now(),
 	}
 	services.CreateProblem(problem1)
+	logrus.Info("WHAT?")
 }
 
 func main() {
@@ -54,7 +61,8 @@ func main() {
 
 	port := cfg.Port
 
-	db.DB = db.NewXMockDB()
+	//db.DB = db.NewXMockDB()
+	db.DB = db.ConnectToDB()
 	initSystem()
 	// db.ConnectToDB()
 	serverAddress := fmt.Sprintf(":%d", port)

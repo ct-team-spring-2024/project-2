@@ -158,3 +158,18 @@ func (m *XMockDB) UpdateProblemStatus(problemID int, status models.ProblemStatus
 	}
 	return fmt.Errorf("problem not found")
 }
+
+// Not added to mock database
+func (m *XMockDB) GetProblems() ([]models.Problem, error) {
+	return make([]models.Problem, 0), nil
+}
+func (m *XMockDB) UpdateProblem(problemId int, newProblem models.Problem) error {
+	return nil
+}
+func (m *XMockDB) GetUsers() []models.User {
+	return make([]models.User, 0)
+
+}
+func (m *XMockDB) UpdateUsers(userId int, newUser models.User) error {
+	return nil
+}

@@ -3,6 +3,8 @@ package services
 import (
 	"oj/goforces/internal/db"
 	"oj/goforces/internal/models"
+
+	"github.com/sirupsen/logrus"
 )
 
 func CreateSubmission(userId int, problemId int, code, language string) (int, error) {
@@ -16,6 +18,7 @@ func CreateSubmission(userId int, problemId int, code, language string) (int, er
 
 	subId, err := db.DB.AddSubmission(newSub)
 	if err != nil {
+		logrus.Errorf("Error when creating submission => %+v", err)
 		return -1, err
 	}
 	return subId, nil

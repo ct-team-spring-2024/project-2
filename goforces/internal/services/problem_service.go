@@ -6,46 +6,35 @@ import (
 	"sync"
 	"time"
 
+	"oj/goforces/internal/db"
 	"oj/goforces/internal/models"
 
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	problemsStore    []models.Problem
-	problemsMutex    sync.Mutex
-	problemIdCounter = 1
+	problemsMutex sync.Mutex
 )
 
 func CreateProblem(problem models.Problem) (models.Problem, error) {
 	problemsMutex.Lock()
 	defer problemsMutex.Unlock()
 
-	problem.ProblemId = problemIdCounter
-	problemIdCounter++
-	problemsStore = append(problemsStore, problem)
+	//problem.ProblemId = problemIdCounter
+	//	problemIdCounter++
+	//problemsStore = append(problemsStore, problem)
+	err := db.DB.CreateProblem(problem)
+	if err != nil {
+		return problem, err
+	}
+
 	return problem, nil
 }
 
-func UpdateProblem(ownerId int, updatedProblem models.Problem) (models.Problem, error) {
+func UpdateProblem(problemId int, updatedProblem models.Problem) (models.Problem, error) {
 	problemsMutex.Lock()
 	defer problemsMutex.Unlock()
-
-	for i, p := range problemsStore {
-		if p.ProblemId == updatedProblem.ProblemId {
-			if p.OwnerId != ownerId {
-				return models.Problem{}, errors.New("unauthorized: not the owner")
-			}
-			p.Title = updatedProblem.Title
-			p.Statement = updatedProblem.Statement
-			p.TimeLimit = updatedProblem.TimeLimit
-			p.MemoryLimit = updatedProblem.MemoryLimit
-			p.Inputs = updatedProblem.Inputs
-			p.Outputs = updatedProblem.Outputs
-			problemsStore[i] = p
-			return p, nil
-		}
-	}
+	db.DB.UpdateProblem(problemId, updatedProblem)
 	return models.Problem{}, errors.New("problem not found")
 }
 
@@ -54,7 +43,8 @@ func GetMyProblems(ownerId int) []models.Problem {
 	defer problemsMutex.Unlock()
 
 	var userProblems []models.Problem
-	for _, p := range problemsStore {
+	problems, _ := db.DB.GetProblems()
+	for _, p := range problems {
 		logrus.Info(p)
 		logrus.Info(p.OwnerId)
 		logrus.Info(ownerId)
@@ -70,7 +60,9 @@ func GetProblemById(problemId int) (models.Problem, error) {
 	problemsMutex.Lock()
 	defer problemsMutex.Unlock()
 
-	for _, p := range problemsStore {
+	problems, _ := db.DB.GetProblems()
+
+	for _, p := range problems {
 		if p.ProblemId == problemId {
 			return p, nil
 		}
@@ -83,9 +75,12 @@ func GetPublishedProblems(page int, pageSize int) []models.Problem {
 	defer problemsMutex.Unlock()
 
 	var published []models.Problem
-	for _, p := range problemsStore {
+	problems, _ := db.DB.GetProblems()
+	logrus.Info("came heredjfsdkjfdslkjdsflkdf")
+	for _, p := range problems {
 		logrus.Infof("PP => %v", p)
-		if p.Status == "published" {
+		logrus.Info("cameHere")
+		if p.Status == "Published" {
 			published = append(published, p)
 		}
 	}
@@ -108,14 +103,16 @@ func GetPublishedProblems(page int, pageSize int) []models.Problem {
 func GetAllProblems() []models.Problem {
 	problemsMutex.Lock()
 	defer problemsMutex.Unlock()
-	return problemsStore
+	problems, _ := db.DB.GetProblems()
+	return problems
 }
 
 func UpdateProblemStatus(problemId int, newStatus string, feedback string) (models.Problem, error) {
 	problemsMutex.Lock()
 	defer problemsMutex.Unlock()
+	problems, _ := db.DB.GetProblems()
 
-	for i, p := range problemsStore {
+	for _, p := range problems {
 		if p.ProblemId == problemId {
 			if newStatus != "draft" && newStatus != "published" && newStatus != "rejected" {
 				return models.Problem{}, errors.New("invalid status")
@@ -131,7 +128,8 @@ func UpdateProblemStatus(problemId int, newStatus string, feedback string) (mode
 				p.PublishDate = time.Time{}
 				p.Feedback = feedback
 			}
-			problemsStore[i] = p
+
+			UpdateProblem(p.ProblemId, p)
 			return p, nil
 		}
 	}
