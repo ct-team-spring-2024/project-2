@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/foolin/goview/supports/ginview"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/sessions"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	ppath "path"
 	"strconv"
+
+	"github.com/foolin/goview/supports/ginview"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
+	"github.com/sirupsen/logrus"
 
 	"oj/frontend"
 )
@@ -179,13 +180,18 @@ func main() {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
 			return
 		}
+		user, err := getClientByUsername(clientUsername, c)
+		if err != nil {
+			logrus.Error("Error fetching user from backend")
+
+		}
 
 		logrus.Infof("result => %+v", result)
 		pageData := frontend.ProfilePageData{
 			Page:             "profile",
 			ClientUsername:   clientUsername,
-			IsClientAdmin:    clientUsername == "admin",
-			IsUserAdmin:      username == "admin",
+			IsClientAdmin:    user.Role == "admin",
+			IsUserAdmin:      user.Role == "admin",
 			Username:         username,
 			Submissions:      make([]frontend.Submission, 0),
 			Email:            result.Profile.Email,
@@ -263,17 +269,21 @@ func main() {
 			return
 		}
 
-		problems := make([]frontend.ProblemPageProblemSummary, 0, 0)
+		problems := make([]frontend.ProblemPageProblemSummary, 0)
 		for _, p := range result {
 			problems = append(problems, frontend.ProblemPageProblemSummary{
 				Id:    p.ProblemId,
 				Title: p.Title,
 			})
 		}
+		user, err := getClientByUsername(clientUsername, c)
+		if err != nil {
+			logrus.Error("Error fetching the user from backend")
+		}
 		pageData := frontend.ProblemsPageData{
 			Page:           "problems",
 			ClientUsername: clientUsername,
-			IsClientAdmin:  clientUsername == "admin",
+			IsClientAdmin:  user.Role == "admin",
 			Problems:       problems,
 			CurrentPage:    pageNo,
 			Limit:          20,
@@ -338,11 +348,16 @@ func main() {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
 			return
 		}
+		user, err := getClientByUsername(clientUsername, c)
+		if err != nil {
+			logrus.Infof("Error fetching the user from the backend", err)
+		}
+		logrus.Info("Client is", user)
 
 		pageData := frontend.SingleProblemPageData{
 			Page:               "problem",
 			ClientUsername:     clientUsername,
-			IsClientAdmin:      clientUsername == "admin",
+			IsClientAdmin:      user.Role == "admin",
 			ProblemId:          problemId,
 			ProblemStatement:   result.Statement,
 			ProblemTitle:       result.Title,
@@ -413,9 +428,6 @@ func main() {
 			MemoryLimit int    `json:"memoryLimit"`
 			PublishDate string `json:"publishDate"`
 		}
-		type apiRequestDataType struct {
-		}
-
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
 
@@ -464,24 +476,6 @@ func main() {
 			}
 			problems = append(problems, p)
 		}
-
-		// problems := []frontend.ProblemSummary{
-		// 	{
-		// 		Id:     "1",
-		// 		Title:  "Two Sum",
-		// 		Status: "published",
-		// 	},
-		// 	{
-		// 		Id:     "2",
-		// 		Title:  "Fibonacci Sequence",
-		// 		Status: "draft",
-		// 	},
-		// 	{
-		// 		Id:     "3",
-		// 		Title:  "Binary Search",
-		// 		Status: "published",
-		// 	},
-		// }
 		pageData := frontend.MyProblemsPageData{
 			Page:           "my-problems",
 			ClientUsername: clientUsername,
@@ -511,17 +505,47 @@ func main() {
 			logrus.Error(err)
 			return
 		}
+		user, err := getClientByUsername(clientUsername, c)
+		if err != nil {
+			logrus.Error("Error fetching client from backend")
+		}
 
 		editProblemPageData := frontend.EditProblemPageData{
 			Page:           "edit-problem",
 			ClientUsername: clientUsername,
-			IsClientAdmin:  clientUsername == "admin",
+			IsClientAdmin:  user.Role == "admin",
 			Problem:        problem,
 		}
 		logrus.Infof("Problem => %+v", editProblemPageData.Problem)
 
 		// Render the problem.html template with the problem data
 		c.HTML(http.StatusOK, "edit-problem", editProblemPageData)
+	})
+	router.POST("/edit/:id", func(c *gin.Context) {
+		// session, _ := store.Get(c.Request, "session-name")
+		// clientUsername := session.Values["username"].(string)
+
+		// // Extract the problem ID from the URL
+		// idStr := c.Param("id")
+		// id, err := strconv.Atoi(idStr)
+		// logrus.Info("id is ", id)
+		// if err != nil || id <= 0 {
+		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid problem ID"})
+		// 	return
+		// }
+
+		// Fetch the problem details
+		// problem, err := getProblemByID(id, c)
+		// if err != nil {
+		// 	c.JSON(http.StatusNotFound, gin.H{"error": "Problem not found"})
+		// 	logrus.Error(err)
+		// 	return
+		// }
+		// user, err := getClientByUsername(clientUsername, c)
+		// if err != nil {
+		// 	logrus.Error("Error fetching client from backend")
+		// }
+
 	})
 	router.GET("/manage-problems", func(c *gin.Context) {
 		type apiResponseDataType struct {
@@ -693,4 +717,71 @@ func getProblemByIdMock(id int) (frontend.Problem, error) {
 
 	}
 	return problem, nil
+}
+func getClientByUsername(username string, c *gin.Context) (frontend.User, error) {
+	type apiResponseDataType struct {
+		Profile struct {
+			UserId   int    `json:"userId"`
+			Username string `json:"username"`
+			Email    string `json:"email"`
+			Password string `json:"password"`
+			Role     string `json:"role"`
+		} `json:"profile"`
+		SubmissionStats struct {
+			Total          int     `json:"total"`
+			SuccessCount   int     `json:"successCount"`
+			SuccessPercent float64 `json:"successPercent"`
+			FailCount      int     `json:"failCount"`
+			FailPercent    float64 `json:"failPercent"`
+			ErrorCount     int     `json:"errorCount"`
+			ErrorPercent   float64 `json:"errorPercent"`
+		} `json:"submissionStats"`
+	}
+
+	session, _ := store.Get(c.Request, "session-name")
+	clientUsername := session.Values["username"].(string)
+	token := session.Values["jwt"].(string)
+	logrus.Infof("clientUsername => %s", clientUsername)
+	logrus.Infof("token => %s", token)
+	logrus.Infof("username => %s", username)
+
+	profileUrl := fmt.Sprintf("%s/profile/%s", backendUrl, username)
+	req, err := http.NewRequest("GET", profileUrl, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+		return frontend.User{}, nil
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+		return frontend.User{}, nil
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+		return frontend.User{}, nil
+	}
+	var user apiResponseDataType
+	if err := json.Unmarshal(body, &user); err != nil {
+		logrus.Infof("Resultttt => %+v", user)
+		logrus.Infof("Error => %+v", err)
+		logStringError(body)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+		return frontend.User{}, nil
+	}
+	UserC := frontend.User{
+		ID:       user.Profile.UserId,
+		Username: user.Profile.Username,
+		Email:    user.Profile.Email,
+		Role:     user.Profile.Role,
+	}
+
+	return UserC, nil
+
 }
