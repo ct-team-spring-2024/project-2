@@ -22,7 +22,15 @@ func initSystem() {
 		Password: "admin",
 		Role:     "admin",
 	}
+	u2 := models.User{
+		UserId:   1,
+		Username: "Hello",
+		Email:    "tesHello@email.com",
+		Password: "admin",
+		Role:     "user",
+	}
 	services.RegisterUser(u1)
+	services.RegisterUser(u2)
 	problem1 := models.Problem{
 		ProblemId:   1,
 		OwnerId:     u1.UserId,

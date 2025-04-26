@@ -19,6 +19,7 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("/admin/user/role", middlewares.AuthMiddleware(http.HandlerFunc(controllers.UpdateUserRole)))
 
 	mux.Handle("/problems", middlewares.AuthMiddleware(http.HandlerFunc(controllers.ProblemsHandler)))
+	mux.Handle("/problems/{id}", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetProblemByID)))
 
 	mux.Handle("/problems/mine", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetMyProblems)))
 	mux.Handle("/problems/", http.HandlerFunc(controllers.GetProblemByID))

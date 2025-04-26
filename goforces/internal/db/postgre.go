@@ -33,6 +33,7 @@ func ConnectToDB() *postgresDB {
 	db := postgresDB{
 		conn: conn,
 	}
+	//-----------------For testing
 	// db.AddSubmission(models.Submission{
 	// 	UserId:    1,
 	// 	ProblemId: 2,
