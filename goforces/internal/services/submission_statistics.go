@@ -20,13 +20,9 @@ func GetSubmissionStats(user models.User) SubmissionStats {
 	total := len(submissions)
 	var success, fail, errorCount int
 	for _, sub := range submissions {
-		switch sub.Status {
-		case "OK":
+		switch sub.SubmissionStatus {
+		case models.Submitted:
 			success++
-		case "WrongAnswer":
-			fail++
-		case "Submitted":
-			// do nothing
 		default:
 			errorCount++
 		}

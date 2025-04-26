@@ -10,6 +10,7 @@ import (
 	"oj/goforces/internal/models"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -40,19 +41,23 @@ func findWithUsername(username string) *models.User {
 	return nil
 }
 
-func RegisterUser(u models.User) (models.User, error) {
+func RegisterUser(u models.User) (int, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()
 
 	user := findWithEmail(u.Email)
 	if user != nil {
-		return models.User{}, errors.New("user already exists")
+		logrus.Errorf("Cannot register userrr %v", u)
+		return -1, errors.New("user already exists")
 	}
 	//TODO : this must be synced
 	//userIDCounter++
 	// TODO: hash the password
-	db.DB.CreateUser(u)
-	return u, nil
+	id, err := db.DB.CreateUser(u)
+	if err != nil {
+		logrus.Errorf("Cannot register user %v", err)
+	}
+	return id, nil
 }
 
 // TODO: Move to auth package

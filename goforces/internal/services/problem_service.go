@@ -34,7 +34,6 @@ func CreateProblem(problem models.Problem) (models.Problem, error) {
 func UpdateProblem(problemId int, updatedProblem models.Problem) (models.Problem, error) {
 	problemsMutex.Lock()
 	defer problemsMutex.Unlock()
-
 	db.DB.UpdateProblem(problemId, updatedProblem)
 	return models.Problem{}, errors.New("problem not found")
 }

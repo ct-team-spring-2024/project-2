@@ -367,6 +367,72 @@ func main() {
 		c.HTML(http.StatusOK, "problem", pageData)
 	})
 
+	router.GET("/problem/:problemid/submit", func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		// token := session.Values["jwt"].(string)
+		clientUsername := session.Values["username"].(string)
+		problemIdStr := c.Param("problemid")
+		problemId, _ := strconv.Atoi(problemIdStr)
+
+		pageData := frontend.SubmitPageData{
+			Page:           "submit",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			ProblemId:      problemId,
+		}
+
+		c.HTML(http.StatusOK, "submit", pageData)
+	})
+
+	router.POST("/problem/:problemid/submit", func(c *gin.Context) {
+		type formDataType struct {
+			Code string `form:"code"`
+		}
+		type apiRequestDataType struct {
+			Code      string `json:"code"`
+			ProblemId int    `json:"problemId"`
+			Language  string `json:"language"`
+		}
+
+		session, _ := store.Get(c.Request, "session-name")
+		token := session.Values["jwt"].(string)
+		clientUsername := session.Values["username"].(string)
+		problemIdStr := c.Param("problemid")
+		problemId, _ := strconv.Atoi(problemIdStr)
+		submitUrl := fmt.Sprintf("%s/submit", backendUrl)
+
+		var formData formDataType
+		if err := c.ShouldBind(&formData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+			return
+		}
+		var apiRequestData apiRequestDataType
+		apiRequestData = apiRequestDataType{
+			Code:      formData.Code,
+			ProblemId: problemId,
+			Language:  "go",
+		}
+		jsonData, err := json.Marshal(apiRequestData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal request data"})
+			return
+		}
+		req, _ := http.NewRequest("POST", submitUrl, bytes.NewBuffer(jsonData))
+		logrus.Infof("SSSS => %s", jsonData)
+		logrus.Infof("SSSS => %s", submitUrl)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", clientUsername))
+	})
+
 	router.GET("/add-problem", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
@@ -476,6 +542,7 @@ func main() {
 			}
 			problems = append(problems, p)
 		}
+
 		pageData := frontend.MyProblemsPageData{
 			Page:           "my-problems",
 			ClientUsername: clientUsername,
@@ -530,20 +597,20 @@ func main() {
 		// id, err := strconv.Atoi(idStr)
 		// logrus.Info("id is ", id)
 		// if err != nil || id <= 0 {
-		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid problem ID"})
-		// 	return
+		//	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid problem ID"})
+		//	return
 		// }
 
 		// Fetch the problem details
 		// problem, err := getProblemByID(id, c)
 		// if err != nil {
-		// 	c.JSON(http.StatusNotFound, gin.H{"error": "Problem not found"})
-		// 	logrus.Error(err)
-		// 	return
+		//	c.JSON(http.StatusNotFound, gin.H{"error": "Problem not found"})
+		//	logrus.Error(err)
+		//	return
 		// }
 		// user, err := getClientByUsername(clientUsername, c)
 		// if err != nil {
-		// 	logrus.Error("Error fetching client from backend")
+		//	logrus.Error("Error fetching client from backend")
 		// }
 
 	})
@@ -618,6 +685,114 @@ func main() {
 		}
 
 		c.HTML(http.StatusOK, "manage-problems", pageData)
+	})
+	router.GET("/submissions", func(c *gin.Context) {
+		type apiResponseDataType struct {
+			ID               int                    `json:"id"`
+			UserID           int                    `json:"userId"`
+			ProblemID        int                    `json:"problemId"`
+			Code             string                 `json:"code"`
+			TestsStatus      map[string]interface{} `json:"testsstatus"` // Empty object in JSON
+			SubmissionStatus string                 `json:"submissionstatus"`
+		}
+
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
+		token := session.Values["jwt"].(string)
+		username := c.Param("username")
+		logrus.Infof("clientUsername => %s", clientUsername)
+		logrus.Infof("token => %s", token)
+		logrus.Infof("username => %s", username)
+
+		submissionsUrl := fmt.Sprintf("%s/submissions", backendUrl)
+		req, err := http.NewRequest("GET", submissionsUrl, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+			return
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+
+		var result []apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Resultttt => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+
+		logrus.Infof("result => %+v", result)
+		submissions := make([]frontend.SubmissionsPageEntryData, 0, 0)
+
+		var parseTestsStatus = func(m map[string]interface{}) frontend.TestsStatus {
+			result := make(frontend.TestsStatus)
+			for key, value := range m {
+				if status, ok := value.(string); ok {
+					result[key] = struct {
+						Status string
+					}{
+						Status: status,
+					}
+				} else {
+					result[key] = struct {
+						Status string
+					}{
+						Status: "Unknown",
+					}
+				}
+			}
+			return result
+		}
+		var calScore = func(t frontend.TestsStatus) int {
+			totalTests := len(t)
+			okCount := 0
+			for _, testResult := range t {
+				if testResult.Status == "OK" {
+					okCount++
+				}
+			}
+			if totalTests == 0 {
+				return 0
+			}
+			percentage := (okCount * 100) / totalTests
+
+			return percentage
+		}
+
+		for _, d := range result {
+			testsStatus := parseTestsStatus(d.TestsStatus)
+			score := calScore(testsStatus)
+			submissions = append(submissions, frontend.SubmissionsPageEntryData{
+				Id:               d.ID,
+				ProblemId:        d.ProblemID,
+				SubmissionStatus: d.SubmissionStatus,
+				Score:            score,
+				TestsStatus:      testsStatus,
+			})
+		}
+		pageData := frontend.SubmissionsPageData{
+			Page:           "submissions",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			Submissions:    submissions,
+		}
+		logrus.Infof("pd => \n %+v", pageData)
+		c.HTML(http.StatusOK, "submissions", pageData)
 	})
 
 	router.Run(":8081")

@@ -1,0 +1,142 @@
+/* Section Styling */
+.submissions-list {
+    padding: 2rem;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    max-width: 1200px;
+}
+
+.submissions-list h2 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+/* Table Styling */
+.submissions-list table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 1rem;
+    text-align: left;
+}
+
+.submissions-list table thead {
+    background-color: #007bff;
+    color: white;
+}
+
+.submissions-list table th {
+    padding: 1rem;
+    font-weight: bold;
+}
+
+.submissions-list table tbody tr {
+    border-bottom: 1px solid #ddd;
+}
+
+.submissions-list table tbody tr:nth-child(even) {
+    background-color: #f3f3f3;
+}
+
+.submissions-list table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.submissions-list table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.submissions-list table td a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.submissions-list table td a:hover {
+    color: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .submissions-list table {
+        font-size: 0.9rem;
+    }
+
+    .submissions-list h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Popup Styling */
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.popup h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.popup ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.popup ul li {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.popup a {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.popup a:hover {
+    color: #0056b3;
+}
+
+/* Overlay Styling */
+body:has(.popup:target) {
+    overflow: hidden; /* Prevent scrolling while popup is open */
+}
+body:has(.popup:target)::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+/* Show the popup when it is targeted */
+.popup:target {
+    display: block;
+}

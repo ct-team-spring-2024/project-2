@@ -1,32 +1,27 @@
 package services
 
 import (
-	"errors"
 	"oj/goforces/internal/db"
 	"oj/goforces/internal/models"
+
+	"github.com/sirupsen/logrus"
 )
 
-var submissionIdCounter = 1
-
-func CreateSubmission(userId, problemId int, code, language string) (models.Submission, error) {
-	if code == "" || language == "" {
-		return models.Submission{}, errors.New("code and language cannot be empty")
-	}
-
+func CreateSubmission(userId int, problemId int, code, language string) (int, error) {
 	newSub := models.Submission{
-
 		UserId:    userId,
 		ProblemId: problemId,
 		Code:      code,
-		Status:    "Not Examined",
+		TestsStatus:      make(map[string]models.TestStatus),
+		SubmissionStatus: models.Submitted,
 	}
-	submissionIdCounter++
 
-	err := db.DB.AddSubmission(newSub)
+	subId, err := db.DB.AddSubmission(newSub)
 	if err != nil {
-		return models.Submission{}, err
+		logrus.Errorf("Error when creating submission => %+v", err)
+		return -1, err
 	}
-	return newSub, nil
+	return subId, nil
 }
 
 func GetSubmissionsByUser(userId int) ([]models.Submission, error) {

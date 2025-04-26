@@ -28,6 +28,14 @@
         {{ if eq .Page "problem" }}
         <link rel="stylesheet" href="/static/problem_style.css">
         {{ end }}
+        {{ if eq .Page "submit" }}
+        <link rel="stylesheet" href="/static/submit_style.css">
+        {{ end }}
+        {{ if eq .Page "submissions" }}
+        <link rel="stylesheet" href="/static/submissions_style.css">
+        {{ end }}
+
+
     </head>
     <body>
         <!-- Header Section -->
@@ -35,6 +43,7 @@
             <nav>
                 <ul>
                     <li><a href="/profile/{{ .ClientUsername }}">My Profile</a></li>
+                    <li><a href="/submissions">My Submissions</a></li>
                     <li><a href="/problems">Published Problems</a></li>
                     <li><a href="/add-problem">Add Problem</a></li>
                     <li>

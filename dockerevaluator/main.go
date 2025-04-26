@@ -111,7 +111,7 @@ func runTest(inputFile string, outputFile string, timeoutSeconds int) string {
 		if err != nil {
 			logrus.Errorf("Error running usercode for input %s: %v", inputFile, err)
 			if strings.Contains(err.Error(), "signal: killed") {
-				return "memorylimit"
+				return "memorylimiterror"
 			}
 			return "runtimeerror"
 		}

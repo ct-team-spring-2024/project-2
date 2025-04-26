@@ -2,11 +2,25 @@ package evaluator
 
 import "time"
 
+type Status string
+
+const (
+	StatusOK               Status = "OK"
+	StatusRuntimeError     Status = "runtimeerror"
+	StatusMemoryLimitError Status = "memorylimiterror"
+	StatusTimeLimitError   Status = "timelimiterror"
+)
+
 type Result struct {
+	Status Status
 	Output string
-	Error  error
+}
+
+type OverallResult struct {
+	Description string
+	Error       error
 }
 
 type Evaluator interface {
-	EvalCode(code string, inputs []string, timelimit time.Duration, memorylimit int) (Result, []string)
+	EvalCode(code string, inputs []string, timelimit time.Duration, memorylimit int) (OverallResult, []Result)
 }

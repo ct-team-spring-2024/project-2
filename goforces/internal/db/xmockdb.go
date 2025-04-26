@@ -3,11 +3,11 @@ package db
 import (
 	"fmt"
 	"sync"
-	"time"
+
+	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 
 	"oj/goforces/internal/models"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type XMockDB struct {
@@ -21,52 +21,17 @@ type XMockDB struct {
 }
 
 func NewXMockDB() *XMockDB {
-
-	submissions := []*models.Submission{
-		{
-			ID:        1,
-			UserId:    1,
-			ProblemId: 1,
-			Code:      "code1",
-			Status:    models.Submitted,
-		},
-	}
-
-	hashedPass, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
-	users := []*models.User{
-		{
-			UserId:   1,
-			Username: "admin",
-			Email:    "admin@example.com",
-			Password: string(hashedPass),
-			Role:     "admin",
-		},
-	}
-
-	problems := []*models.Problem{
-		{
-			ProblemId:   1,
-			OwnerId:     1,
-			Title:       "Sample Problem",
-			Statement:   "Calculate sum of two numbers",
-			TimeLimit:   1,
-			MemoryLimit: 256,
-			Status:      models.Published,
-			PublishDate: time.Now(),
-		},
-	}
-
 	return &XMockDB{
-		submissions:      submissions,
-		users:            users,
-		problems:         problems,
-		nextSubmissionID: 2,
-		nextUserID:       2,
-		nextProblemID:    2,
+		submissions:      make([]*models.Submission, 0, 0),
+		users:            make([]*models.User, 0, 0),
+		problems:         make([]*models.Problem, 0, 0),
+		nextSubmissionID: 0,
+		nextUserID:       0,
+		nextProblemID:    0,
 	}
 }
 
-func (m *XMockDB) AddSubmission(s models.Submission) error {
+func (m *XMockDB) AddSubmission(s models.Submission) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -75,7 +40,31 @@ func (m *XMockDB) AddSubmission(s models.Submission) error {
 
 	newSubmission := s
 	m.submissions = append(m.submissions, &newSubmission)
-	return nil
+	return s.ID, nil
+}
+
+
+func (m *XMockDB) UpdateSubmissionStatus(submissionID int, status models.SubmissionStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	logrus.Infof("Updateing. s => %d", submissionID)
+	logrus.Infof("Updateing. status => %+v", status)
+	logrus.Infof("Updateing. m => %+v", m.submissions)
+	for _, submission := range m.submissions {
+		if submissionID == submission.ID {
+			submission.SubmissionStatus = status
+		}
+	}
+}
+
+func (m *XMockDB) UpdateTestStatus(s models.Submission, testId string, testStatus models.TestStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, submission := range m.submissions {
+		if submission.ID == s.ID {
+			submission.TestsStatus[testId] = testStatus
+		}
+	}
 }
 
 func (m *XMockDB) GetUserSubmission(userID int) []models.Submission {
@@ -89,6 +78,20 @@ func (m *XMockDB) GetUserSubmission(userID int) []models.Submission {
 		}
 	}
 	return userSubmissions
+}
+
+
+func (m *XMockDB) GetSubmission(submissionID int) models.Submission {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for _, submission := range m.submissions {
+		if submission.ID == submissionID {
+			return *submission
+		}
+	}
+	logrus.Fatal("No Submission Found")
+	return models.Submission{}
 }
 
 func (m *XMockDB) CreateUser(user models.User) error {
@@ -117,7 +120,7 @@ func (m *XMockDB) GetUserByID(userID int) (*models.User, error) {
 			return user, nil
 		}
 	}
-	return nil, fmt.Errorf("user not found") // [[4]]
+	return nil, fmt.Errorf("user not found")
 }
 
 func (m *XMockDB) GetProblemByID(id int) (*models.Problem, error) {

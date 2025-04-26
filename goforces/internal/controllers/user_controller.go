@@ -15,15 +15,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdUser, err := services.RegisterUser(newUser)
+	userId, err := services.RegisterUser(newUser)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	createdUser.Password = ""
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(createdUser)
+	json.NewEncoder(w).Encode(map[string]interface{}{"userId": userId})
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {

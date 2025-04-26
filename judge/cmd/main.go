@@ -17,7 +17,7 @@ func main() {
 
 	logrus.Debug("This is a debug message")
 
-	port := ":8080"
+	port := ":8082"
 
 	router := api.SetupRoutes()
 	// Setup DB

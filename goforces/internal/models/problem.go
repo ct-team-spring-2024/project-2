@@ -17,8 +17,8 @@ type Problem struct {
 	Statement   string        `json:"statement"`
 	TimeLimit   int           `json:"timeLimit"`   // in seconds
 	MemoryLimit int           `json:"memoryLimit"` // in MB
-	Input       string        `json:"input"`
-	Output      string        `json:"output"`
+	Inputs      []string      `json:"inputs"`
+	Outputs     []string      `json:"outputs"`
 	Status      ProblemStatus `json:"status"`
 	Feedback    string        `json:"feedback,omitempty"` // In case of rejection
 	PublishDate time.Time     `json:"publishDate,omitempty"`

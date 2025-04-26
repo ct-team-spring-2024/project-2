@@ -52,6 +52,13 @@ type AddProblemPageData struct {
 	IsClientAdmin  bool
 }
 
+type SubmitPageData struct {
+	Page               string
+	ClientUsername     string
+	IsClientAdmin      bool
+	ProblemId          int
+}
+
 type SingleProblemPageData struct {
 	Page               string
 	ClientUsername     string
@@ -88,4 +95,24 @@ type ManageProblemsPageData struct {
 	ClientUsername string
 	IsClientAdmin  bool
 	Problems       []ProblemSummary
+}
+
+
+type TestsStatus map[string]struct{
+	Status string
+}
+
+type SubmissionsPageEntryData struct {
+	Id int
+	ProblemId int
+	TestsStatus TestsStatus
+	SubmissionStatus string
+	Score int
+}
+
+type SubmissionsPageData struct {
+	Page           string
+	ClientUsername string
+	IsClientAdmin  bool
+	Submissions    []SubmissionsPageEntryData
 }

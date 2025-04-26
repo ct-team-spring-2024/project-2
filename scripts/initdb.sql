@@ -1,11 +1,12 @@
+-- CREATE DATABASE goforces;
 
--- Then create the table
 CREATE TABLE IF NOT EXISTS submissions (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     problem_id INT NOT NULL,
     code TEXT NOT NULL,
-    status VARCHAR(50) NOT NULL
+    tests_status JSONB NOT NULL,
+    submission_status VARCHAR(55) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS problems (
@@ -15,8 +16,8 @@ CREATE TABLE IF NOT EXISTS problems (
     statement TEXT NOT NULL,
     time_limit INT NOT NULL,      -- in seconds
     memory_limit INT NOT NULL,    -- in MB
-    input TEXT NOT NULL,
-    output TEXT NOT NULL,
+    inputs JSONB NOT NULL,
+    outputs JSONB NOT NULL,
     status VARCHAR(20) NOT NULL CHECK (status IN ('Draft', 'Published', 'Rejected')),
     feedback TEXT,
     publish_date TIMESTAMP

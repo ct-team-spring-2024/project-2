@@ -4,24 +4,31 @@ import (
 	"github.com/google/uuid"
 )
 
-type SubmissionStatus string
-
+type TestStatus string
 const (
-	Submitted         SubmissionStatus = "Submitted"
-	OK                SubmissionStatus = "OK"
-	WrongAnswer       SubmissionStatus = "WrongAnswer"
-	CompileError      SubmissionStatus = "CompileError"
-	MemoryLimitError  SubmissionStatus = "MemoryLimitError"
-	TimeLimitError    SubmissionStatus = "TimeLimitError"
-	RuntimeErrorError SubmissionStatus = "RuntimeErrorError"
+	OK                TestStatus = "OK"
+	WrongAnswer       TestStatus = "WrongAnswer"
+	CompileError      TestStatus = "CompileError"
+	MemoryLimitError  TestStatus = "MemoryLimitError"
+	TimeLimitError    TestStatus = "TimeLimitError"
+	RuntimeErrorError TestStatus = "RuntimeErrorError"
+	Unknown           TestStatus = "Unknown"
 )
 
+type SubmissionStatus string
+const (
+	Submitted SubmissionStatus = "Submitted"
+	Evaluated SubmissionStatus = "Evaluated"
+)
+
+
 type Submission struct {
-	ID        int              `json:"id"`
-	UserId    int              `json:"userId"`
-	ProblemId int              `json:"problemId"`
-	Code      string           `json:"code"`
-	Status    SubmissionStatus `json:"status"`
+	ID                int                         `json:"id"`
+	UserId            int                         `json:"userId"`
+	ProblemId         int                         `json:"problemId"`
+	Code              string                      `json:"code"`
+	TestsStatus       map[string]TestStatus       `json:"testsstatus"`
+	SubmissionStatus  SubmissionStatus            `json:"submissionstatus"`
 }
 
 func generateUniqueId() int {
@@ -31,10 +38,11 @@ func generateUniqueId() int {
 
 func NewSubmission(userId int, problemId int, code string) Submission {
 	return Submission{
-		ID:        generateUniqueId(),
-		UserId:    userId,
-		ProblemId: problemId,
-		Code:      code,
-		Status:    "Submitted",
+		ID:               generateUniqueId(),
+		UserId:           userId,
+		ProblemId:        problemId,
+		Code:             code,
+		SubmissionStatus: Submitted,
+		TestsStatus:      make(map[string]TestStatus),
 	}
 }
