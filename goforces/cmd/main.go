@@ -28,15 +28,14 @@ func initSystem() {
 		OwnerId:     u1.UserId,
 		Title:       "problem 1 title",
 		Statement:   "This is a simple problem",
-		TimeLimit:   1000,
-		MemoryLimit: 2000,
-		Input:       "KIR",
-		Output:      "KHAR",
+		TimeLimit:   3000,
+		MemoryLimit: 500,
+		Inputs:      []string{"50 1 10", "50 1 600"},
+		Outputs:     []string{"50", "50", "50", "50", "50", "50", "50", "50"},
 		Status:      "published",
 		Feedback:    "HA?",
 		PublishDate: time.Now(),
 	}
-
 	services.CreateProblem(problem1)
 }
 
@@ -57,7 +56,7 @@ func main() {
 
 	db.DB = db.NewXMockDB()
 	initSystem()
-	db.ConnectToDB()
+	// db.ConnectToDB()
 	serverAddress := fmt.Sprintf(":%d", port)
 	srv := &http.Server{
 		Addr:         serverAddress,

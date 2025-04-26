@@ -28,7 +28,8 @@ func NewXMockDB() *XMockDB {
 			UserId:    1,
 			ProblemId: 1,
 			Code:      "code1",
-			Status:    models.Submitted,
+			TestsStatus:         make(map[string]models.TestStatus),
+			SubmissionStatus:    models.Submitted,
 		},
 	}
 
@@ -76,6 +77,27 @@ func (m *XMockDB) AddSubmission(s models.Submission) error {
 	newSubmission := s
 	m.submissions = append(m.submissions, &newSubmission)
 	return nil
+}
+
+
+func (m *XMockDB) UpdateSubmissionStatus(s models.Submission, status models.SubmissionStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, submission := range m.submissions {
+		if submission.ID == s.ID {
+			submission.SubmissionStatus = status
+		}
+	}
+}
+
+func (m *XMockDB) UpdateTestStatus(s models.Submission, testId string, testStatus models.TestStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, submission := range m.submissions {
+		if submission.ID == s.ID {
+			submission.TestsStatus[testId] = testStatus
+		}
+	}
 }
 
 func (m *XMockDB) GetUserSubmission(userID int) []models.Submission {

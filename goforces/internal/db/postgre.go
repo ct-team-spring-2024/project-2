@@ -16,7 +16,7 @@ func ConnectToDB() {
 
 	_, err := pgx.Connect(ctx, connStr)
 	if err != nil {
-		logrus.Error("Unable to connect to database: %v\n", err)
+		logrus.Errorf("Unable to connect to database: %v\n", err)
 	}
 	//defer conn.Close(ctx)
 
@@ -26,7 +26,7 @@ func ConnectToDB() {
 	//	var now time.Time
 	// err = conn.QueryRow(ctx, "SELECT NOW()").Scan(&now)
 	// if err != nil {
-	// 	logrus.Error("Query failed: %v\n", err)
+	//	logrus.Error("Query failed: %v\n", err)
 	// }
 
 	// logrus.Info("Current time from DB: %v\n", now)

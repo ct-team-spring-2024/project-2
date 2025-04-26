@@ -40,8 +40,8 @@ func UpdateProblem(ownerId int, updatedProblem models.Problem) (models.Problem, 
 			p.Statement = updatedProblem.Statement
 			p.TimeLimit = updatedProblem.TimeLimit
 			p.MemoryLimit = updatedProblem.MemoryLimit
-			p.Input = updatedProblem.Input
-			p.Output = updatedProblem.Output
+			p.Inputs = updatedProblem.Inputs
+			p.Outputs = updatedProblem.Outputs
 			problemsStore[i] = p
 			return p, nil
 		}

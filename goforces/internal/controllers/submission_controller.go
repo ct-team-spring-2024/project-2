@@ -31,6 +31,13 @@ func CreateSubmission(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Send the code to the judge service
+	problem, err := services.GetProblemById(payload.ProblemId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	go services.EvalCode(submission, problem)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(submission)

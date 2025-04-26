@@ -39,14 +39,15 @@ func EvalCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, outputs := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs,
+	overallresult, results := Eval.EvalCode(evalRequest.Code, evalRequest.Inputs,
 		time.Duration(evalRequest.Timelimit)*time.Millisecond,
 		evalRequest.Memorylimit)
-	logrus.Infof("result and outputs => %+v \n %+v", result, outputs)
+	logrus.Info("overallresult => %+v", overallresult)
+	logrus.Infof("results => %+v", results)
 
 	// Respond with the result
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(outputs)
+	json.NewEncoder(w).Encode(results)
 }
 
 func SetupRoutes() *http.ServeMux {

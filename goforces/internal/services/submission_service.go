@@ -18,7 +18,7 @@ func CreateSubmission(userId, problemId int, code, language string) (models.Subm
 		UserId:    userId,
 		ProblemId: problemId,
 		Code:      code,
-		Status:    "Not Examined",
+		SubmissionStatus:    models.Submitted,
 	}
 	submissionIdCounter++
 
