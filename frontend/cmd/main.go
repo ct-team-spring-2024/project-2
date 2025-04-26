@@ -361,10 +361,10 @@ func main() {
 		problemId, _ := strconv.Atoi(problemIdStr)
 
 		pageData := frontend.SubmitPageData{
-			Page:               "submit",
-			ClientUsername:     clientUsername,
-			IsClientAdmin:      clientUsername == "admin",
-			ProblemId:          problemId,
+			Page:           "submit",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			ProblemId:      problemId,
 		}
 
 		c.HTML(http.StatusOK, "submit", pageData)
@@ -372,15 +372,14 @@ func main() {
 
 	router.POST("/problem/:problemid/submit", func(c *gin.Context) {
 		type formDataType struct {
-			Code string      `form:"code"`
+			Code string `form:"code"`
 		}
 		type apiRequestDataType struct {
-			Code string      `json:"code"`
+			Code      string `json:"code"`
 			ProblemId int    `json:"problemId"`
 			Language  string `json:"language"`
 		}
 		type apiResponseDataType struct {
-
 		}
 
 		session, _ := store.Get(c.Request, "session-name")
@@ -397,9 +396,9 @@ func main() {
 		}
 		var apiRequestData apiRequestDataType
 		apiRequestData = apiRequestDataType{
-			Code: formData.Code,
+			Code:      formData.Code,
 			ProblemId: problemId,
-			Language: "go",
+			Language:  "go",
 		}
 		jsonData, err := json.Marshal(apiRequestData)
 		if err != nil {
@@ -678,6 +677,74 @@ func main() {
 		}
 
 		c.HTML(http.StatusOK, "manage-problems", pageData)
+	})
+	router.GET("/submissions", func(c *gin.Context) {
+		type apiResponseDataType struct {
+			ID               int                    `json:"id"`
+			UserID           int                    `json:"userId"`
+			ProblemID        int                    `json:"problemId"`
+			Code             string                 `json:"code"`
+			TestsStatus      map[string]interface{} `json:"testsstatus"` // Empty object in JSON
+			SubmissionStatus string                 `json:"submissionstatus"`
+		}
+
+		session, _ := store.Get(c.Request, "session-name")
+		clientUsername := session.Values["username"].(string)
+		token := session.Values["jwt"].(string)
+		username := c.Param("username")
+		logrus.Infof("clientUsername => %s", clientUsername)
+		logrus.Infof("token => %s", token)
+		logrus.Infof("username => %s", username)
+
+		submissionsUrl := fmt.Sprintf("%s/submissions", backendUrl)
+		req, err := http.NewRequest("GET", submissionsUrl, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+			return
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+
+		var result []apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Resultttt => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+
+		logrus.Infof("result => %+v", result)
+		submissions := make([]frontend.SubmissionsPageEntryData, 0, 0)
+		for _, d := range result {
+			submissions = append(submissions, frontend.SubmissionsPageEntryData{
+				Id: d.ID,
+				ProblemId: d.ProblemID,
+				SubmissionStatus: d.SubmissionStatus,
+				TestsStatus: nil,
+			})
+		}
+		pageData := frontend.SubmissionsPageData{
+			Page:             "profile",
+			ClientUsername:   clientUsername,
+			IsClientAdmin:    clientUsername == "admin",
+			Submissions: submissions,
+		}
+		c.HTML(http.StatusOK, "submissions", pageData)
 	})
 
 	router.Run(":8081")

@@ -96,3 +96,20 @@ type ManageProblemsPageData struct {
 	IsClientAdmin  bool
 	Problems       []ProblemSummary
 }
+
+
+type SubmissionsPageEntryData struct {
+	Id int
+	ProblemId int
+	TestsStatus map[string]struct{
+		Status string
+	}
+	SubmissionStatus string
+}
+
+type SubmissionsPageData struct {
+	Page           string
+	ClientUsername string
+	IsClientAdmin  bool
+	Submissions    []SubmissionsPageEntryData
+}

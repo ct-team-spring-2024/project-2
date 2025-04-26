@@ -1,0 +1,35 @@
+{{ define "title" }}Submissions List{{ end }}
+
+{{ define "content" }}
+<section class="submissions-list">
+    <h2>Submissions List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Problem ID</th>
+                <th>Submission Status</th>
+                <th>Test Results</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Submissions }}
+            <tr>
+                <td><a href="/submission/{{ .Id }}">{{ .Id }}</a></td>
+                <td><a href="/problem/{{ .ProblemId }}">{{ .ProblemId }}</a></td>
+                <td>{{ .SubmissionStatus }}</td>
+                <td>
+                    <ul>
+                        {{ range $testName, $testResult := .TestsStatus }}
+                        <li>
+                            <strong>{{ $testName }}:</strong> {{ $testResult.Status }}
+                        </li>
+                        {{ end }}
+                    </ul>
+                </td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</section>
+{{ end }}
