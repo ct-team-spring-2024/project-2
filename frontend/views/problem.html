@@ -30,6 +30,10 @@
             <h3>Problem Statement</h3>
             <p>{{ .ProblemStatement }}</p>
         </div>
+        <!-- Submit Button -->
+        <div class="submit-button">
+            <a href="/problem/{{ .ProblemId }}/submit" class="btn">Submit</a>
+        </div>
     </div>
 </section>
 {{ end }}

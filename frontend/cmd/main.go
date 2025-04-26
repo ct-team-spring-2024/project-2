@@ -353,6 +353,91 @@ func main() {
 		c.HTML(http.StatusOK, "problem", pageData)
 	})
 
+	router.GET("/problem/:problemid/submit", func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "session-name")
+		// token := session.Values["jwt"].(string)
+		clientUsername := session.Values["username"].(string)
+		problemIdStr := c.Param("problemid")
+		problemId, _ := strconv.Atoi(problemIdStr)
+
+		pageData := frontend.SubmitPageData{
+			Page:               "submit",
+			ClientUsername:     clientUsername,
+			IsClientAdmin:      clientUsername == "admin",
+			ProblemId:          problemId,
+		}
+
+		c.HTML(http.StatusOK, "submit", pageData)
+	})
+
+	router.POST("/problem/:problemid/submit", func(c *gin.Context) {
+		type formDataType struct {
+			Code string      `form:"code"`
+		}
+		type apiRequestDataType struct {
+			Code string      `json:"code"`
+			ProblemId int    `json:"problemId"`
+			Language  string `json:"language"`
+		}
+		type apiResponseDataType struct {
+
+		}
+
+		session, _ := store.Get(c.Request, "session-name")
+		token := session.Values["jwt"].(string)
+		clientUsername := session.Values["username"].(string)
+		problemIdStr := c.Param("problemid")
+		problemId, _ := strconv.Atoi(problemIdStr)
+		submitUrl := fmt.Sprintf("%s/submit", backendUrl)
+
+		var formData formDataType
+		if err := c.ShouldBind(&formData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+			return
+		}
+		var apiRequestData apiRequestDataType
+		apiRequestData = apiRequestDataType{
+			Code: formData.Code,
+			ProblemId: problemId,
+			Language: "go",
+		}
+		jsonData, err := json.Marshal(apiRequestData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal request data"})
+			return
+		}
+		req, _ := http.NewRequest("POST", submitUrl, bytes.NewBuffer(jsonData))
+		logrus.Infof("SSSS => %s", jsonData)
+		logrus.Infof("SSSS => %s", submitUrl)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+
+		var result apiResponseDataType
+		if err := json.Unmarshal(body, &result); err != nil {
+			logrus.Infof("Result => %+v", result)
+			logrus.Infof("Error => %+v", err)
+			logrus.Infof("DDD => %+v", apiRequestData)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+
+		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", clientUsername))
+	})
+
 	router.GET("/add-problem", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
@@ -467,21 +552,21 @@ func main() {
 		}
 
 		// problems := []frontend.ProblemSummary{
-		// 	{
-		// 		Id:     "1",
-		// 		Title:  "Two Sum",
-		// 		Status: "published",
-		// 	},
-		// 	{
-		// 		Id:     "2",
-		// 		Title:  "Fibonacci Sequence",
-		// 		Status: "draft",
-		// 	},
-		// 	{
-		// 		Id:     "3",
-		// 		Title:  "Binary Search",
-		// 		Status: "published",
-		// 	},
+		//	{
+		//		Id:     "1",
+		//		Title:  "Two Sum",
+		//		Status: "published",
+		//	},
+		//	{
+		//		Id:     "2",
+		//		Title:  "Fibonacci Sequence",
+		//		Status: "draft",
+		//	},
+		//	{
+		//		Id:     "3",
+		//		Title:  "Binary Search",
+		//		Status: "published",
+		//	},
 		// }
 		pageData := frontend.MyProblemsPageData{
 			Page:           "my-problems",

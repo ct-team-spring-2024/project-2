@@ -1,0 +1,16 @@
+{{ define "title" }}Submit Code - Problem {{ .ProblemId }}{{ end }}
+
+{{ define "content" }}
+<section class="submit-code">
+    <h2>Submit Code for Problem {{ .ProblemId }}</h2>
+    <form action="/problem/{{ .ProblemId }}/submit" method="POST">
+        <div class="form-group">
+            <label for="code">Enter Your Code:</label>
+            <textarea id="code" name="code" rows="15" cols="80" placeholder="Write your code here..."></textarea>
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn">Submit Code</button>
+        </div>
+    </form>
+</section>
+{{ end }}
