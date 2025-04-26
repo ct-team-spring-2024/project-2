@@ -98,13 +98,16 @@ type ManageProblemsPageData struct {
 }
 
 
+type TestsStatus map[string]struct{
+	Status string
+}
+
 type SubmissionsPageEntryData struct {
 	Id int
 	ProblemId int
-	TestsStatus map[string]struct{
-		Status string
-	}
+	TestsStatus TestsStatus
 	SubmissionStatus string
+	Score int
 }
 
 type SubmissionsPageData struct {

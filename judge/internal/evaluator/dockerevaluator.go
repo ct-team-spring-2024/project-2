@@ -187,15 +187,16 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 		}
 
 		result := getResult(resultFilePath)
-		logrus.Infof("result => %v", result)
 		output := result["test_n"].(map[string]interface{})
-		if output[testId] == "timelimit" {
+		logrus.Infof("result => %v", result)
+		logrus.Infof("output => %+v", output)
+		if output[testId] == "timelimiterror" {
 			results = append(results, Result{
 				Status: StatusTimeLimitError,
 				Output: "",
 			})
 		} else
-		if output[testId] == "memorylimit" {
+		if output[testId] == "memorylimiterror" {
 			results = append(results, Result{
 				Status: StatusMemoryLimitError,
 				Output: "",

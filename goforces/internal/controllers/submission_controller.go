@@ -6,6 +6,8 @@ import (
 
 	"oj/goforces/internal/middlewares"
 	"oj/goforces/internal/services"
+
+	"github.com/sirupsen/logrus"
 )
 
 func CreateSubmission(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +28,8 @@ func CreateSubmission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	submission, err := services.CreateSubmission(userID, payload.ProblemId, payload.Code, payload.Language)
+	submissionId, err := services.CreateSubmission(userID, payload.ProblemId, payload.Code, payload.Language)
+	logrus.Infof("submissionId => %+v", submissionId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -37,10 +40,10 @@ func CreateSubmission(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	go services.EvalCode(submission, problem)
+	go services.EvalCode(submissionId, problem)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(submission)
+	json.NewEncoder(w).Encode(submissionId)
 }
 
 func GetMySubmissions(w http.ResponseWriter, r *http.Request) {

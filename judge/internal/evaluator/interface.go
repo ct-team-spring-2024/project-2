@@ -8,7 +8,7 @@ const (
 	StatusOK               Status = "OK"
 	StatusRuntimeError     Status = "runtimeerror"
 	StatusMemoryLimitError Status = "memorylimiterror"
-	StatusTimeLimitError   Status = "time-limiterror"
+	StatusTimeLimitError   Status = "timelimiterror"
 )
 
 type Result struct {

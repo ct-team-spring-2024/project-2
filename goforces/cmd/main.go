@@ -31,7 +31,7 @@ func initSystem() {
 		TimeLimit:   3000,
 		MemoryLimit: 500,
 		Inputs:      []string{"50 1 10", "50 1 600"},
-		Outputs:     []string{"50", "50", "50", "50", "50", "50", "50", "50"},
+		Outputs:     []string{"51", "51"},
 		Status:      "published",
 		Feedback:    "HA?",
 		PublishDate: time.Now(),

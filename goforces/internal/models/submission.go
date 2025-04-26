@@ -6,13 +6,13 @@ import (
 
 type TestStatus string
 const (
-	Unknown           TestStatus = "Unknown"
 	OK                TestStatus = "OK"
 	WrongAnswer       TestStatus = "WrongAnswer"
 	CompileError      TestStatus = "CompileError"
 	MemoryLimitError  TestStatus = "MemoryLimitError"
 	TimeLimitError    TestStatus = "TimeLimitError"
 	RuntimeErrorError TestStatus = "RuntimeErrorError"
+	Unknown           TestStatus = "Unknown"
 )
 
 type SubmissionStatus string

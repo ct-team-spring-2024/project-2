@@ -379,8 +379,6 @@ func main() {
 			ProblemId int    `json:"problemId"`
 			Language  string `json:"language"`
 		}
-		type apiResponseDataType struct {
-		}
 
 		session, _ := store.Get(c.Request, "session-name")
 		token := session.Values["jwt"].(string)
@@ -417,22 +415,6 @@ func main() {
 			return
 		}
 		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
-			return
-		}
-
-		var result apiResponseDataType
-		if err := json.Unmarshal(body, &result); err != nil {
-			logrus.Infof("Result => %+v", result)
-			logrus.Infof("Error => %+v", err)
-			logrus.Infof("DDD => %+v", apiRequestData)
-			logStringError(body)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
-			return
-		}
 
 		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", clientUsername))
 	})
@@ -730,20 +712,60 @@ func main() {
 
 		logrus.Infof("result => %+v", result)
 		submissions := make([]frontend.SubmissionsPageEntryData, 0, 0)
+
+		var parseTestsStatus = func(m map[string]interface{}) frontend.TestsStatus {
+			result := make(frontend.TestsStatus)
+			for key, value := range m {
+				if status, ok := value.(string); ok {
+					result[key] = struct {
+						Status string
+					}{
+						Status: status,
+					}
+				} else {
+					result[key] = struct {
+						Status string
+					}{
+						Status: "Unknown",
+					}
+				}
+			}
+			return result
+		}
+		var calScore = func(t frontend.TestsStatus) int {
+			totalTests := len(t)
+			okCount := 0
+			for _, testResult := range t {
+				if testResult.Status == "OK" {
+					okCount++
+				}
+			}
+			if totalTests == 0 {
+				return 0
+			}
+			percentage := (okCount * 100) / totalTests
+
+			return percentage
+		}
+
 		for _, d := range result {
+			testsStatus := parseTestsStatus(d.TestsStatus)
+			score := calScore(testsStatus)
 			submissions = append(submissions, frontend.SubmissionsPageEntryData{
-				Id: d.ID,
-				ProblemId: d.ProblemID,
+				Id:               d.ID,
+				ProblemId:        d.ProblemID,
 				SubmissionStatus: d.SubmissionStatus,
-				TestsStatus: nil,
+				Score:            score,
+				TestsStatus:      testsStatus,
 			})
 		}
 		pageData := frontend.SubmissionsPageData{
-			Page:             "profile",
-			ClientUsername:   clientUsername,
-			IsClientAdmin:    clientUsername == "admin",
-			Submissions: submissions,
+			Page:           "submissions",
+			ClientUsername: clientUsername,
+			IsClientAdmin:  clientUsername == "admin",
+			Submissions:    submissions,
 		}
+		logrus.Infof("pd => \n %+v", pageData)
 		c.HTML(http.StatusOK, "submissions", pageData)
 	})
 

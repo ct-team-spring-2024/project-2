@@ -3,33 +3,40 @@
 {{ define "content" }}
 <section class="submissions-list">
     <h2>Submissions List</h2>
-    <table>
+    <table id="submissions-list">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Problem ID</th>
                 <th>Submission Status</th>
-                <th>Test Results</th>
+                <th>Score (%)</th> <!-- New column for score -->
             </tr>
         </thead>
         <tbody>
             {{ range .Submissions }}
             <tr>
-                <td><a href="/submission/{{ .Id }}">{{ .Id }}</a></td>
+                <td><a href="#submission-{{ .Id }}">{{ .Id }}</a></td>
                 <td><a href="/problem/{{ .ProblemId }}">{{ .ProblemId }}</a></td>
                 <td>{{ .SubmissionStatus }}</td>
-                <td>
-                    <ul>
-                        {{ range $testName, $testResult := .TestsStatus }}
-                        <li>
-                            <strong>{{ $testName }}:</strong> {{ $testResult.Status }}
-                        </li>
-                        {{ end }}
-                    </ul>
-                </td>
+                <td>{{ .Score }}</td> <!-- Display the precomputed score here -->
             </tr>
             {{ end }}
         </tbody>
     </table>
+
+    <!-- Detailed Test Results for Each Submission -->
+    {{ range .Submissions }}
+    <div id="submission-{{ .Id }}" class="popup">
+        <h3>Test Results for Submission #{{ .Id }}</h3>
+        <ul>
+            {{ range $testName, $testResult := .TestsStatus }}
+            <li>
+                <strong>{{ $testName }}:</strong> {{ $testResult.Status }}
+            </li>
+            {{ end }}
+        </ul>
+        <a href="#submissions-list">Back to Submissions List</a>
+    </div>
+    {{ end }}
 </section>
 {{ end }}
