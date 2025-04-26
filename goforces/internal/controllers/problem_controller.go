@@ -89,9 +89,11 @@ func GetPublishedProblems(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetProblemByID(w http.ResponseWriter, r *http.Request) {
+
 	segments := strings.Split(r.URL.Path, "/")
 	if len(segments) < 3 {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
+
 		return
 	}
 	idStr := segments[2]
@@ -100,13 +102,15 @@ func GetProblemByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid problem ID", http.StatusBadRequest)
 		return
 	}
+
 	problem, err := services.GetProblemById(problemId)
 	if err != nil {
 		http.Error(w, "Problem not found", http.StatusNotFound)
+
 		return
 	}
 	// If not published, only allow viewing if the requester is the owner.
-	if problem.Status != "published" {
+	if problem.Status != "Published" {
 		userID, ok := middlewares.GetUserIDFromContext(r.Context())
 		if !ok || problem.OwnerId != userID {
 			http.Error(w, "Problem not published", http.StatusForbidden)
