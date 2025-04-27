@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background-color: #f4f6f8;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120vh;
+}
+
+article {
+  width: 400px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  padding: 40px 30px;
+  text-align: center;
+  border: none;
+}
+
+h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+  color: #1eadad;
+  font-weight: 600;
+}
+
+p {
+  font-size: 24px;
+  margin-bottom: 30px;
+  font-weight: 600;
+  color: #333;
+}
+
+input.Username,
+input.Email,
+input.Password {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+input.Username:focus,
+input.Email:focus,
+input.Password:focus {
+  border-color: #1eadad;
+  outline: none;
+}
+
+button.sign-up-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #1eadad;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button.sign-up-button:hover {
+  background-color: #148b8b;
+}

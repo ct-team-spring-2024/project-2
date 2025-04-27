@@ -50,9 +50,8 @@ func RegisterUser(u models.User) (int, error) {
 		logrus.Errorf("Cannot register userrr %v", u)
 		return -1, errors.New("user already exists")
 	}
-	//TODO : this must be synced
-	//userIDCounter++
 	// TODO: hash the password
+	u.Role = "user"
 	id, err := db.DB.CreateUser(u)
 	if err != nil {
 		logrus.Errorf("Cannot register user %v", err)
@@ -70,7 +69,7 @@ func AuthenticateUser(email, password string) (string, error) {
 		return "", errors.New("invalid credentials")
 	}
 
-	tokenString, err := generateToken(*user)
+	tokenString, err := GenerateToken(*user)
 	if err != nil {
 		return "", err
 	}
@@ -86,14 +85,14 @@ func AuthenticateUserWithUsername(username, password string) (string, error) {
 		return "", errors.New("invalid credentials")
 	}
 
-	tokenString, err := generateToken(*user)
+	tokenString, err := GenerateToken(*user)
 	if err != nil {
 		return "", err
 	}
 	return tokenString, nil
 }
 
-func generateToken(user models.User) (string, error) {
+func GenerateToken(user models.User) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &jwt.StandardClaims{
 		Subject:   strconv.Itoa(user.UserId),
