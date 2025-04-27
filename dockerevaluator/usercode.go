@@ -22,8 +22,6 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Input values: %v\n", parts)
-
 	num1, _ := strconv.Atoi(parts[0])
 	num2, _ := strconv.Atoi(parts[1])
 	megabytes, _ := strconv.Atoi(parts[2])
@@ -33,8 +31,8 @@ func main() {
 		memory[i] = byte(i % 8)
 	}
 
-	sum := num1 / num2
+	sum := num1 + num2
 
 	time.Sleep(2 * time.Second)
-	fmt.Printf("Sum: %d\n", sum)
+	fmt.Printf("%d", sum)
 }
