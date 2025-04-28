@@ -16,10 +16,66 @@ import (
 )
 
 type DockerEvaluator struct {
+	compilerDockerId string
+	userCodeFilePath string
+	userCodeExeFilePath string
+	resultFilePath string
 }
 
 func NewDockerEvaluator() *DockerEvaluator {
-	return &DockerEvaluator{}
+	dockerId, userCodeFilePath, userCodeExeFilePath, resultFilePath := InitCompilerContainer()
+	return &DockerEvaluator{
+		compilerDockerId: dockerId,
+		userCodeFilePath: userCodeFilePath,
+		userCodeExeFilePath: userCodeExeFilePath,
+		resultFilePath: resultFilePath,
+	}
+}
+
+func InitCompilerContainer() (string, string, string, string) {
+	imageName := "dockerevaluator"
+	userCodeFolderPath, _ := os.MkdirTemp("", "usercode")
+	userCodeFilePath := fmt.Sprintf("%s/usercode.go", userCodeFolderPath)
+	err := os.WriteFile(userCodeFilePath, []byte(""), 0644)
+	if err != nil {
+		logrus.Fatalf("usercode file cannot be created",)
+	}
+
+	userCodeExeFolderPath, err := os.MkdirTemp("", "usercodeexe")
+	userCodeExeFilePath := fmt.Sprintf("%s/usercode", userCodeExeFolderPath)
+	os.WriteFile(userCodeExeFilePath, []byte(""), 0644)
+	if err != nil {
+		logrus.Fatalf("usercodeexe file cannot be created")
+	}
+
+	resultFolderPath, err := os.MkdirTemp("", "result")
+	resultFilePath := fmt.Sprintf("%s/result.json", resultFolderPath)
+	err = os.WriteFile(resultFilePath, []byte("{}"), 0644)
+	if err != nil {
+		logrus.Fatalf("result file cannot be created")
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	ctx := context.Background()
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: imageName,
+		Cmd:   []string{"tail", "-f", "/dev/null"},
+	}, &container.HostConfig{
+		Binds: []string{
+			fmt.Sprintf("%s:/app/usercode.go", userCodeFilePath),
+			fmt.Sprintf("%s:/app/usercode", userCodeExeFilePath),
+			fmt.Sprintf("%s:/app/result.json", resultFilePath),
+		},
+		Resources: container.Resources{
+			Memory:     int64(2000 * 1024 * 1024),
+			NanoCPUs:   int64(5000000000),
+		},
+	}, nil, nil, "")
+	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
+	if err != nil {
+		logrus.Fatalf("compiler-container creation failed")
+	}
+	return resp.ID, userCodeFilePath, userCodeExeFilePath, resultFilePath
 }
 
 func getResult(resultFilePath string) map[string]interface{} {
@@ -33,16 +89,9 @@ func getResult(resultFilePath string) map[string]interface{} {
 
 func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.Duration, memorylimit int) (OverallResult, []Result) {
 	results := make([]Result, 0)
-	userCodeFolderPath, err := os.MkdirTemp("", "usercode")
-	userCodeFilePath := fmt.Sprintf("%s/usercode.go", userCodeFolderPath)
-	err = os.WriteFile(userCodeFilePath, []byte(code), 0644)
-	if err != nil {
-		return OverallResult{
-				Description: "Init Eval Failed",
-				Error:       fmt.Errorf("failed to write usercode.go: %v", err)},
-			results
-	}
-	defer os.RemoveAll(userCodeFolderPath)
+
+
+	err := os.WriteFile(e.userCodeFilePath, []byte(code), 0644)
 
 	configFolderPath, err := os.MkdirTemp("", "config")
 	configFilePath := fmt.Sprintf("%s/config.txt", configFolderPath)
@@ -54,17 +103,6 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 			results
 	}
 	defer os.RemoveAll(configFolderPath)
-
-	resultFolderPath, err := os.MkdirTemp("", "result")
-	resultFilePath := fmt.Sprintf("%s/result.json", resultFolderPath)
-	err = os.WriteFile(resultFilePath, []byte("{}"), 0644)
-	if err != nil {
-		return OverallResult{
-			Description: "Init Eval Failed",
-			Error:       fmt.Errorf("failed to create result.json: %v", err)},
-			results
-	}
-	defer os.RemoveAll(resultFolderPath)
 
 	inputDir, err := os.MkdirTemp("", "inputs")
 	inputFilePath := filepath.Join(inputDir, "input.txt")
@@ -100,16 +138,15 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 	// Step 3: Create the container
 
 	imageName := "dockerevaluator"
-	logrus.Infof("ii %s \n %s \n %s \n %s", userCodeFilePath, resultFilePath, inputFilePath, outputFilePath)
 	logrus.Infof("#1")
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
 		Cmd:   []string{"tail", "-f", "/dev/null"},
 	}, &container.HostConfig{
 		Binds: []string{
-			fmt.Sprintf("%s:/app/usercode.go", userCodeFilePath),
+			fmt.Sprintf("%s:/app/usercode", e.userCodeExeFilePath),
 			fmt.Sprintf("%s:/app/config.txt", configFilePath),
-			fmt.Sprintf("%s:/app/result.json", resultFilePath),
+			fmt.Sprintf("%s:/app/result.json", e.resultFilePath),
 			fmt.Sprintf("%s:/app/input.txt", inputFilePath),
 			fmt.Sprintf("%s:/app/output.txt", outputFilePath),
 		},
@@ -138,7 +175,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 
 	// Run the command using docker exec
 	start := time.Now()
-	cmd := exec.Command("docker", "exec", resp.ID, "go", "run", "/app/main.go", "--compile")
+	cmd := exec.Command("docker", "exec", e.compilerDockerId, "go", "run", "/app/main.go", "--compile")
 	output, err := cmd.CombinedOutput()
 	duration := time.Since(start)
 	logrus.Infof("#4: Command completed in %v", duration)
@@ -152,7 +189,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 	}
 
 	// Check for compile error
-	result := getResult(resultFilePath)
+	result := getResult(e.resultFilePath)
 	if result["overall_result"] == "compileerror" {
 		return OverallResult{
 			Description: "Compilation Failed",
@@ -160,6 +197,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 			results
 	}
 
+	time.Sleep(5 * time.Second)
 	// // Step 5: Run tests for each input
 	for i, input := range inputs {
 		testId := strconv.Itoa(i+1)
@@ -198,9 +236,9 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 			}
 		}
 
-		result := getResult(resultFilePath)
-		output := result["test_n"].(map[string]interface{})
+		result := getResult(e.resultFilePath)
 		logrus.Infof("result => %v", result)
+		output := result["test_n"].(map[string]interface{})
 		logrus.Infof("output => %+v", output)
 		if output[testId] == "timelimiterror" {
 			results = append(results, Result{
@@ -235,10 +273,10 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 		}
 	}
 
-	err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{Force: true})
-	if err != nil {
-		logrus.Errorf("failed to remove container: %v", err)
-	}
+	// err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{Force: true})
+	// if err != nil {
+	//	logrus.Errorf("failed to remove container: %v", err)
+	// }
 
 	// Return the final result
 	return OverallResult{

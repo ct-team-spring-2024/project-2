@@ -88,6 +88,11 @@ func runTest(inputFile string, outputFile string, timeoutSeconds int) string {
 	defer outFile.Close()
 
 	// Run usercode binary with input file as stdin and timeout
+	err = os.Chmod("./usercode", 0755) // Set executable permission
+	if err != nil {
+		logrus.Errorf("Error setting execute permission for usercode: %v", err)
+		return "runtimeerror"
+	}
 	cmd := exec.Command("./usercode")
 	cmd.Stdin = inFile
 	cmd.Stdout = outFile
