@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   db:
     image: postgres
@@ -12,6 +14,49 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./scripts:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+  goforces:
+    build:
+      context: ./goforces
+    container_name: goforces
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: example
+      DB_NAME: postgres
+    depends_on:
+      - db
+    networks:
+      - app-network
+      - judge-network
+
+  judge-1:
+    build:
+      context: ./judge
+    container_name: judge-1
+    restart: always
+    networks:
+      - judge-network
+
+  judge-2:
+    build:
+      context: ./judge
+    container_name: judge-2
+    restart: always
+    networks:
+      - judge-network
 
 volumes:
   pgdata:
+
+networks:
+  app-network:
+    driver: bridge
+  judge-network:
+    driver: bridge
