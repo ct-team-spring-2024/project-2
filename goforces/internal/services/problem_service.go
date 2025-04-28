@@ -57,7 +57,8 @@ func GetProblemById(problemId int) (models.Problem, error) {
 	problemsMutex.Lock()
 	defer problemsMutex.Unlock()
 
-	problems, _ := db.DB.GetProblems()
+	problems, err := db.DB.GetProblems()
+	logrus.Infof("ALL PROBLEMS => %+v %+v", problems, err)
 
 	for _, p := range problems {
 		if p.ProblemId == problemId {

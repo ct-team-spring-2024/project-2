@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS problems (
     inputs JSONB NOT NULL,
     outputs JSONB NOT NULL,
     status VARCHAR(20) NOT NULL CHECK (status IN ('Draft', 'Published', 'Rejected')),
-    feedback TEXT,
+    feedback TEXT NOT NULL,
     publish_date TIMESTAMP
 );
 

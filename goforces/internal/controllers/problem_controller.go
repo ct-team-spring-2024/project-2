@@ -85,6 +85,7 @@ func GetPublishedProblems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	problems := services.GetPublishedProblems(page, pageSize)
+	logrus.Infof("FFFF => %+v", problems)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(problems)
 }

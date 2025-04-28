@@ -223,7 +223,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 		}
 	}
 
-	err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{})
+	err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{Force: true})
 	if err != nil {
 		logrus.Errorf("failed to remove container: %v", err)
 	}
