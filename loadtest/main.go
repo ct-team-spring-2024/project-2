@@ -124,7 +124,7 @@ func callHttp(wg *sync.WaitGroup, durations *[]time.Duration, mu *sync.Mutex) {
 
 	// Define the request payload
 	payload := map[string]interface{}{
-		"problemId": 1,
+		"problemId": 178,
 		"code":      genCode(),
 		"language":  "go",
 	}
