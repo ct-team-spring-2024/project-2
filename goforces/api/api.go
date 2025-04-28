@@ -18,11 +18,10 @@ func SetupRoutes() *http.ServeMux {
 	mux.Handle("/admin/user", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetUserProfile)))
 	mux.Handle("/admin/user/role", middlewares.AuthMiddleware(http.HandlerFunc(controllers.UpdateUserRole)))
 
+	// TODO why problems has two handlers??
 	mux.Handle("/problems", middlewares.AuthMiddleware(http.HandlerFunc(controllers.ProblemsHandler)))
 	mux.Handle("/problems/{id}", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetProblemByID)))
-
 	mux.Handle("/problems/mine", middlewares.AuthMiddleware(http.HandlerFunc(controllers.GetMyProblems)))
-	mux.Handle("/problems/", http.HandlerFunc(controllers.GetProblemByID))
 
 	mux.Handle("/admin/problems", middlewares.AuthMiddleware(http.HandlerFunc(controllers.AdminGetAllProblems)))
 	mux.Handle("/admin/problems/status", middlewares.AuthMiddleware(http.HandlerFunc(controllers.AdminUpdateProblemStatus)))

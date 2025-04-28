@@ -27,6 +27,7 @@ func CreateProblem(w http.ResponseWriter, r *http.Request) {
 	}
 	newProblem.OwnerId = userID
 	createdProblem, err := services.CreateProblem(newProblem)
+	logrus.Infof("CreatedProblem => %+v", createdProblem)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
