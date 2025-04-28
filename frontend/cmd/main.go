@@ -51,6 +51,79 @@ func main() {
 	router.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
+	router.GET("/signup", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "signup.html", nil)
+	})
+	router.POST("/signup", func(c *gin.Context) {
+		type formDataType struct {
+			Username string `form:"username"`
+			Password string `form:"password"`
+			Email    string `form:"email"`
+		}
+		type apiRequestDataType struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+			Email    string `json:"email"`
+		}
+		type apiResponseDataType struct {
+			Token string `json:"token"`
+		}
+		var formData formDataType
+		if err := c.ShouldBind(&formData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+			return
+		}
+		var apiRequestData apiRequestDataType
+		apiRequestData = apiRequestDataType{
+			Username: formData.Username,
+			Password: formData.Password,
+			Email:    formData.Email,
+		}
+		payloadBytes, err := json.Marshal(apiRequestData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal payload"})
+			return
+		}
+
+		// send to backend
+		signUpUrl := fmt.Sprintf("%s/register", backendUrl)
+		resp, err := http.Post(signUpUrl, "application/json", bytes.NewReader(payloadBytes))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read backend response"})
+			return
+		}
+
+		var result apiResponseDataType
+		// TODO: the response should have a structure. A simple string is not good.
+		if err := json.Unmarshal(body, &result); err != nil || result.Token == "" {
+			logrus.Infof("Result => %+v", result)
+			logStringError(body)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
+			return
+		}
+
+		session, err := store.Get(c.Request, "session-name")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get session"})
+			return
+		}
+		session.Values["username"] = formData.Username
+		session.Values["jwt"] = result.Token
+		if err := session.Save(c.Request, c.Writer); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+			return
+		}
+
+		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", formData.Username))
+
+	})
 	router.POST("/login", func(c *gin.Context) {
 		type formDataType struct {
 			Username string `form:"username"`
@@ -436,6 +509,7 @@ func main() {
 	router.GET("/add-problem", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
+
 		pageData := frontend.AddProblemPageData{
 			Page:           "add-problem",
 			ClientUsername: clientUsername,
