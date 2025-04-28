@@ -128,7 +128,9 @@ var timeoutSeconds int = readTimeout("config.txt")
 
 func main() {
 	logrus.SetLevel(logrus.DebugLevel)
-	logrus.SetFormatter(&logrus.TextFormatter{})
+	logrus.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
 
 	var compileMode bool
 	var testID string
@@ -138,11 +140,13 @@ func main() {
 
 	// Step 0: Compile user code
 	if compileMode {
+		logrus.Info("#1")
 		result := TestResult{
 			OverallResult: "OK",
 			Tests:         make(map[string]string),
 		}
 		err := compileUserCode()
+		logrus.Info("#2")
 		if err != nil {
 			logrus.Errorf("Compilation error: %v", err)
 			result.OverallResult = "compileerror"
@@ -151,6 +155,7 @@ func main() {
 			logrus.Infof("Compilation successful")
 			writeResultToJSON(result)
 		}
+		logrus.Info("#3")
 		return
 	}
 

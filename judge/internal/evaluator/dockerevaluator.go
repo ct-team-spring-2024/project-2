@@ -101,6 +101,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 
 	imageName := "dockerevaluator"
 	logrus.Infof("ii %s \n %s \n %s \n %s", userCodeFilePath, resultFilePath, inputFilePath, outputFilePath)
+	logrus.Infof("#1")
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
 		Cmd:   []string{"tail", "-f", "/dev/null"},
@@ -118,6 +119,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 			NanoCPUs:   int64(1000000000),
 		},
 	}, nil, nil, "")
+	logrus.Infof("#2")
 	if err != nil {
 		return OverallResult{
 			Description: "Init Eval Failed",
@@ -126,6 +128,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 	}
 
 	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
+	logrus.Infof("#3")
 	if err != nil {
 		return OverallResult{
 			Description: "Init Eval Failed",
@@ -134,8 +137,13 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 	}
 
 	// Run the command using docker exec
+	start := time.Now()
 	cmd := exec.Command("docker", "exec", resp.ID, "go", "run", "/app/main.go", "--compile")
 	output, err := cmd.CombinedOutput()
+	duration := time.Since(start)
+	logrus.Infof("#4: Command completed in %v", duration)
+	logrus.Infof("FFF %s \n %+v", string(output), err)
+
 	if err != nil {
 		return OverallResult{
 			Description: "Init Eval Failed",
@@ -165,8 +173,11 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 				results
 		}
 
+		start := time.Now()
 		cmd := exec.Command("docker", "exec", resp.ID, "go", "run", "/app/main.go", "--test-id", testId)
 		cmd.CombinedOutput()
+		duration := time.Since(start)
+		logrus.Infof("#5: Command completed in %v", duration)
 
 		inspectResp, inspectErr := cli.ContainerInspect(ctx, resp.ID)
 		if inspectErr != nil {
@@ -224,10 +235,10 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 		}
 	}
 
-	err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{Force: true})
-	if err != nil {
-		logrus.Errorf("failed to remove container: %v", err)
-	}
+	// err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{Force: true})
+	// if err != nil {
+	//	logrus.Errorf("failed to remove container: %v", err)
+	// }
 
 	// Return the final result
 	return OverallResult{
