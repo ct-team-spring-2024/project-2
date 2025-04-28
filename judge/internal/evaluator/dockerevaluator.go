@@ -115,6 +115,7 @@ func (e *DockerEvaluator) EvalCode(code string, inputs []string, timelimit time.
 		Resources: container.Resources{
 			Memory:     int64(memorylimit * 1024 * 1024),
 			MemorySwap: int64(memorylimit * 1024 * 1024),
+			NanoCPUs:   int64(1000000000),
 		},
 	}, nil, nil, "")
 	if err != nil {

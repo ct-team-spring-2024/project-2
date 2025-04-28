@@ -138,6 +138,7 @@ func callHttp(wg *sync.WaitGroup, durations *[]time.Duration, mu *sync.Mutex) {
 
 	// Create the HTTP request
 	req, err := http.NewRequest("POST", "http://localhost:8080/submit?sync=true", bytes.NewBuffer(jsonPayload))
+	// req, err := http.NewRequest("POST", "http://localhost:8080/submit", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		slog.Error("Error creating HTTP request", "error", err)
 		return
@@ -148,16 +149,10 @@ func callHttp(wg *sync.WaitGroup, durations *[]time.Duration, mu *sync.Mutex) {
 	req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5MjEzODYsInN1YiI6IjQwOCJ9.bGJl8Q_MsDLo-u1ZPWvaFPzwNwKxnsznlTLFrkgiVxc")
 
 	// Perform the HTTP request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		slog.Error("Error making HTTP request", "error", err)
-		return
+	client := &http.Client{
+		Timeout: 30 * time.Second, // Increase the timeout to 30 seconds
 	}
-	defer resp.Body.Close()
-
-	// Log the response status
-	slog.Info(fmt.Sprintf("HTTP Response Status: %s", resp.Status))
+	client.Do(req)
 
 	// Measure execution time
 	executionTime := time.Since(startTime)
@@ -173,13 +168,13 @@ func callHttp(wg *sync.WaitGroup, durations *[]time.Duration, mu *sync.Mutex) {
 func main() {
 	var outputName string
 	var latencyFileName string
-	var rate int
+	var rate float64
 	var numInvocations int
 	var logLevel string
 
 	flag.StringVar(&outputName, "outputName", "result.txt", "Name of the output file")
 	flag.StringVar(&latencyFileName, "latencyFile", "latencies.csv", "Name of the latency output file")
-	flag.IntVar(&rate, "rate", 10, "Rate of invocations per second")
+	flag.Float64Var(&rate, "rate", 10, "Rate of invocations per second")
 	flag.IntVar(&numInvocations, "numInvocations", 100, "Number of invocations")
 	flag.StringVar(&logLevel, "log", "info", "Log level")
 	flag.Parse()
@@ -206,7 +201,8 @@ func main() {
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
-	ticker := time.NewTicker(time.Second / time.Duration(rate))
+	interval := time.Duration(float64(time.Second) / rate)
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	var wg sync.WaitGroup
