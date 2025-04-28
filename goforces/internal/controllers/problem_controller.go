@@ -138,7 +138,9 @@ func AdminUpdateProblemStatus(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
+	logrus.Info("HERE")
 	updatedProblem, err := services.UpdateProblemStatus(payload.ProblemId, payload.NewStatus, payload.Feedback)
+	logrus.Info("HERE2")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

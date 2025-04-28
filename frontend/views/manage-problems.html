@@ -17,10 +17,18 @@
                 <td><a href="/edit/{{ .Id }}">{{ .Id }}</a></td>
                 <td>{{ .Title }}</td>
                 <td>
-                    {{ if eq .Status "draft" }}
-                    <button class="publish" onclick="updateStatus('{{ .Id }}', 'publish')">Make Publish</button>
-                    {{ else if eq .Status "published" }}
-                    <button class="draft" onclick="updateStatus('{{ .Id }}', 'draft')">Make Draft</button>
+                    {{ if eq .Status "Draft" }}
+                    <form action="/manage-problems/update" method="POST" style="display:inline;">
+                        <input type="hidden" name="id" value="{{ .Id }}">
+                        <input type="hidden" name="status" value="Published">
+                        <button type="submit" class="publish">Make Publish</button>
+                    </form>
+                    {{ else if eq .Status "Published" }}
+                    <form action="/manage-problems/update" method="POST" style="display:inline;">
+                        <input type="hidden" name="id" value="{{ .Id }}">
+                        <input type="hidden" name="status" value="Draft">
+                        <button type="submit" class="draft">Make Draft</button>
+                    </form>
                     {{ end }}
                 </td>
             </tr>

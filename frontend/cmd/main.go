@@ -268,6 +268,7 @@ func main() {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
 			return
 		}
+		logrus.Infof("result => %+v", result)
 
 		problems := make([]frontend.ProblemPageProblemSummary, 0)
 		for _, p := range result {
@@ -350,7 +351,7 @@ func main() {
 		}
 		user, err := getClientByUsername(clientUsername, c)
 		if err != nil {
-			logrus.Infof("Error fetching the user from the backend", err)
+			logrus.Infof("Error fetching the user from the backend => %v", err)
 		}
 		logrus.Info("Client is", user)
 
@@ -692,12 +693,15 @@ func main() {
 
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
-
 		token := session.Values["jwt"].(string)
+		user, err := getClientByUsername(clientUsername, c)
+		if err != nil {
+			logrus.Error("Error fetching user from backend")
+
+		}
+
 		allProblemsUrl := fmt.Sprintf("%v/admin/problems", backendUrl)
-
 		req, err := http.NewRequest("GET", allProblemsUrl, nil)
-
 		if err != nil {
 			logrus.Error("Error Creating the request")
 			return
@@ -740,14 +744,61 @@ func main() {
 			}
 			problems = append(problems, p)
 		}
+		logrus.Infof("OK %s %+v", clientUsername, user)
 		pageData := frontend.ManageProblemsPageData{
 			Page:           "manage-problems",
 			ClientUsername: clientUsername,
-			IsClientAdmin:  clientUsername == "admin",
+			IsClientAdmin:  user.Role == "admin",
 			Problems:       problems,
 		}
 
 		c.HTML(http.StatusOK, "manage-problems", pageData)
+	})
+	router.POST("/manage-problems/update", func(c *gin.Context) {
+		type formDataType struct {
+			ID     string `form:"id"`
+			Status string `form:"status"`
+		}
+		type apiRequestDataType struct {
+			ProblemId int    `json:"problemId"`
+			NewStatus string `json:"newStatus"`
+			Feedback  string `json:"feedback"`
+		}
+
+		session, _ := store.Get(c.Request, "session-name")
+		token := session.Values["jwt"].(string)
+		var formData formDataType
+		if err := c.ShouldBind(&formData); err != nil {
+			logrus.Errorf("Error binding form data: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
+			return
+		}
+
+		updateProblemStatusUrl := fmt.Sprintf("%v/admin/problems/status", backendUrl)
+		problemId, _ := strconv.Atoi(formData.ID)
+		var apiRequestData apiRequestDataType
+		apiRequestData = apiRequestDataType{
+			ProblemId: problemId,
+			Feedback: "",
+			NewStatus: formData.Status,
+		}
+		apiRequestBytes, err := json.Marshal(apiRequestData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal payload"})
+			return
+		}
+		req, _ := http.NewRequest("POST", updateProblemStatusUrl, bytes.NewReader(apiRequestBytes))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		c.Redirect(http.StatusFound, "/manage-problems")
 	})
 	router.GET("/submissions", func(c *gin.Context) {
 		type apiResponseDataType struct {
