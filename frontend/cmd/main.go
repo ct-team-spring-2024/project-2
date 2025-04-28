@@ -341,6 +341,7 @@ func main() {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid response from backend"})
 			return
 		}
+		logrus.Infof("result => %+v", result)
 
 		problems := make([]frontend.ProblemPageProblemSummary, 0)
 		for _, p := range result {
@@ -423,7 +424,7 @@ func main() {
 		}
 		user, err := getClientByUsername(clientUsername, c)
 		if err != nil {
-			logrus.Infof("Error fetching the user from the backend", err)
+			logrus.Infof("Error fetching the user from the backend => %v", err)
 		}
 		logrus.Info("Client is", user)
 
@@ -518,19 +519,34 @@ func main() {
 		c.HTML(http.StatusOK, "add-problem", pageData)
 	})
 	router.POST("/add-problem", func(c *gin.Context) {
+		type apiRequestDataType struct {
+			ProblemId   int           `json:"problemId"`
+			OwnerId     int           `json:"ownerId"`
+			Title       string        `json:"title"`
+			Statement   string        `json:"statement"`
+			TimeLimit   int           `json:"timeLimit"`   // in seconds
+			MemoryLimit int           `json:"memoryLimit"` // in MB
+			Inputs      []string      `json:"inputs"`
+			Outputs     []string      `json:"outputs"`
+			Status      string        `json:"status"`
+		}
+		session, _ := store.Get(c.Request, "session-name")
+		token := session.Values["jwt"].(string)
+		clientUsername := session.Values["username"].(string)
+		problemIdStr := c.Param("problemid")
+		problemId, err := strconv.Atoi(problemIdStr)
+
 		// Parse the multipart form (with a max memory of 32MB for file uploads)
 		if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to parse form data"})
 			return
 		}
-
-		// Extract form fields
 		problemTitle := c.PostForm("problemTitle")
-		timeLimit := c.PostForm("timeLimit")
-		memoryLimit := c.PostForm("memoryLimit")
+		timeLimitStr := c.PostForm("timeLimit")
+		timeLimit, _ := strconv.Atoi(timeLimitStr)
+		memoryLimitStr := c.PostForm("memoryLimit")
+		memoryLimit, _ := strconv.Atoi(memoryLimitStr)
 		problemDescription := c.PostForm("problemDescription")
-
-		// Extract the uploaded test case file
 		file, fileHeader, err := c.Request.FormFile("testCaseFile")
 		var testCaseContent string
 		if err == nil {
@@ -546,17 +562,65 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to retrieve test case file"})
 			return
 		}
-
-		// Print the extracted data
 		fmt.Printf("Problem Title: %s\n", problemTitle)
-		fmt.Printf("Time Limit: %s ms\n", timeLimit)
-		fmt.Printf("Memory Limit: %s MB\n", memoryLimit)
+		fmt.Printf("Time Limit: %d ms\n", timeLimit)
+		fmt.Printf("Memory Limit: %d MB\n", memoryLimit)
 		fmt.Printf("Problem Description: %s\n", problemDescription)
 		fmt.Printf("Test Case File Name: %s\n", fileHeader.Filename)
 		fmt.Printf("Test Case Content: %s\n", testCaseContent)
 
-		// Respond with success
-		c.JSON(http.StatusOK, gin.H{"message": "Problem data received and printed"})
+		// Parse Test Case Content
+		var testCases map[string]struct {
+			Inputs string `json:"inputs"`
+			Output string `json:"output"`
+		}
+		err = json.Unmarshal([]byte(testCaseContent), &testCases)
+		if err != nil {
+			logrus.Errorf("Error parsing JSON: %v\n", err)
+			return
+		}
+		var inputs []string
+		var outputs []string
+		for _, testCase := range testCases {
+			inputs = append(inputs, testCase.Inputs)
+			outputs = append(outputs, testCase.Output)
+		}
+		//
+		user, err := getClientByUsername(clientUsername, c)
+		if err != nil {
+			logrus.Error("Error fetching user from backend")
+
+		}
+		var apiRequestData apiRequestDataType
+		apiRequestData = apiRequestDataType{
+			ProblemId: problemId,
+			OwnerId:   user.ID,
+			Title:     problemTitle,
+			Statement: problemDescription,
+			TimeLimit: timeLimit,
+			MemoryLimit: memoryLimit,
+			Inputs:      inputs,
+			Outputs:     outputs,
+			Status:      "Draft",
+		}
+		jsonData, err := json.Marshal(apiRequestData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal request data"})
+			return
+		}
+		addProblemUrl := fmt.Sprintf("%s/problems", backendUrl)
+		req, _ := http.NewRequest("POST", addProblemUrl, bytes.NewBuffer(jsonData))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		c.Redirect(http.StatusFound, fmt.Sprintf("/profile/%s", clientUsername))
 	})
 	router.GET("/my-problems", func(c *gin.Context) {
 		type apiResponseDataType struct {
@@ -703,12 +767,15 @@ func main() {
 
 		session, _ := store.Get(c.Request, "session-name")
 		clientUsername := session.Values["username"].(string)
-
 		token := session.Values["jwt"].(string)
+		user, err := getClientByUsername(clientUsername, c)
+		if err != nil {
+			logrus.Error("Error fetching user from backend")
+
+		}
+
 		allProblemsUrl := fmt.Sprintf("%v/admin/problems", backendUrl)
-
 		req, err := http.NewRequest("GET", allProblemsUrl, nil)
-
 		if err != nil {
 			logrus.Error("Error Creating the request")
 			return
@@ -751,14 +818,61 @@ func main() {
 			}
 			problems = append(problems, p)
 		}
+		logrus.Infof("OK %s %+v", clientUsername, user)
 		pageData := frontend.ManageProblemsPageData{
 			Page:           "manage-problems",
 			ClientUsername: clientUsername,
-			IsClientAdmin:  clientUsername == "admin",
+			IsClientAdmin:  user.Role == "admin",
 			Problems:       problems,
 		}
 
 		c.HTML(http.StatusOK, "manage-problems", pageData)
+	})
+	router.POST("/manage-problems/update", func(c *gin.Context) {
+		type formDataType struct {
+			ID     string `form:"id"`
+			Status string `form:"status"`
+		}
+		type apiRequestDataType struct {
+			ProblemId int    `json:"problemId"`
+			NewStatus string `json:"newStatus"`
+			Feedback  string `json:"feedback"`
+		}
+
+		session, _ := store.Get(c.Request, "session-name")
+		token := session.Values["jwt"].(string)
+		var formData formDataType
+		if err := c.ShouldBind(&formData); err != nil {
+			logrus.Errorf("Error binding form data: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
+			return
+		}
+
+		updateProblemStatusUrl := fmt.Sprintf("%v/admin/problems/status", backendUrl)
+		problemId, _ := strconv.Atoi(formData.ID)
+		var apiRequestData apiRequestDataType
+		apiRequestData = apiRequestDataType{
+			ProblemId: problemId,
+			Feedback: "",
+			NewStatus: formData.Status,
+		}
+		apiRequestBytes, err := json.Marshal(apiRequestData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal payload"})
+			return
+		}
+		req, _ := http.NewRequest("POST", updateProblemStatusUrl, bytes.NewReader(apiRequestBytes))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to contact backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		c.Redirect(http.StatusFound, "/manage-problems")
 	})
 	router.GET("/submissions", func(c *gin.Context) {
 		type apiResponseDataType struct {

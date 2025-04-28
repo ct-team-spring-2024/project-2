@@ -128,7 +128,7 @@ func EvalCode(submissionId int, p models.Problem) {
 			}
 		}
 
-		logrus.Info("submissionId %d ", submissionId)
+		logrus.Infof("submissionId %d ", submissionId)
 		db.DB.UpdateSubmissionStatus(submissionId, models.Evaluated)
 		logrus.Infof("All Subs => %+v", db.DB.GetUserSubmission(s.UserId))
 		break

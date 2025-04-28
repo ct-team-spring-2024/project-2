@@ -32,8 +32,9 @@ func CreateProblem(problem models.Problem) (models.Problem, error) {
 }
 
 func UpdateProblem(problemId int, updatedProblem models.Problem) (models.Problem, error) {
-	problemsMutex.Lock()
-	defer problemsMutex.Unlock()
+	// TODO: This caused deadlock. Why are using these mutexes ????????
+	// problemsMutex.Lock()
+	// defer problemsMutex.Unlock()
 	db.DB.UpdateProblem(problemId, updatedProblem)
 	return models.Problem{}, errors.New("problem not found")
 }
@@ -114,17 +115,17 @@ func UpdateProblemStatus(problemId int, newStatus string, feedback string) (mode
 
 	for _, p := range problems {
 		if p.ProblemId == problemId {
-			if newStatus != "draft" && newStatus != "published" && newStatus != "rejected" {
+			if newStatus != string(models.Published) && newStatus != string(models.Draft) && newStatus != string(models.Rejected) {
 				return models.Problem{}, errors.New("invalid status")
 			}
 			p.Status = models.ProblemStatus(newStatus)
-			if newStatus == "published" {
+			if newStatus == string(models.Published) {
 				p.PublishDate = time.Now()
 				p.Feedback = ""
-			} else if newStatus == "draft" {
+			} else if newStatus == string(models.Draft) {
 				p.PublishDate = time.Time{}
 				p.Feedback = ""
-			} else if newStatus == "rejected" {
+			} else if newStatus == string(models.Rejected) {
 				p.PublishDate = time.Time{}
 				p.Feedback = feedback
 			}

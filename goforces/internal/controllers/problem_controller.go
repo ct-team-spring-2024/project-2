@@ -27,6 +27,7 @@ func CreateProblem(w http.ResponseWriter, r *http.Request) {
 	}
 	newProblem.OwnerId = userID
 	createdProblem, err := services.CreateProblem(newProblem)
+	logrus.Infof("CreatedProblem => %+v", createdProblem)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -137,7 +138,9 @@ func AdminUpdateProblemStatus(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
+	logrus.Info("HERE")
 	updatedProblem, err := services.UpdateProblemStatus(payload.ProblemId, payload.NewStatus, payload.Feedback)
+	logrus.Info("HERE2")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
