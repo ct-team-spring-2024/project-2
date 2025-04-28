@@ -6,6 +6,8 @@ import (
 
 	"oj/goforces/internal/models"
 	"oj/goforces/internal/services"
+
+	"github.com/sirupsen/logrus"
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +24,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"userId": userId})
+	token, err := services.GenerateToken(newUser)
+	if err != nil {
+		logrus.Error("Error generating token for user")
+	}
+	json.NewEncoder(w).Encode(map[string]interface{}{"userId": userId, "token": token})
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
