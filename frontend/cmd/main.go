@@ -64,6 +64,7 @@ func main() {
 			Username string `json:"username"`
 			Password string `json:"password"`
 			Email    string `json:"email"`
+			Role     string `json:"role"`
 		}
 		type apiResponseDataType struct {
 			Token string `json:"token"`
@@ -78,6 +79,7 @@ func main() {
 			Username: formData.Username,
 			Password: formData.Password,
 			Email:    formData.Email,
+			Role:     "user",
 		}
 		payloadBytes, err := json.Marshal(apiRequestData)
 		if err != nil {
@@ -258,13 +260,17 @@ func main() {
 			logrus.Error("Error fetching user from backend")
 
 		}
+		profileUser, err := getClientByUsername(username, c)
+		if err != nil {
+			logrus.Error("Error fetching user from backend")
 
-		logrus.Infof("result => %+v", result)
+		}
+
 		pageData := frontend.ProfilePageData{
 			Page:             "profile",
 			ClientUsername:   clientUsername,
 			IsClientAdmin:    user.Role == "admin",
-			IsUserAdmin:      user.Role == "admin",
+			IsUserAdmin:      profileUser.Role == "admin",
 			Username:         username,
 			Submissions:      make([]frontend.Submission, 0),
 			Email:            result.Profile.Email,
@@ -273,6 +279,9 @@ func main() {
 			SolvedProblems:   result.SubmissionStats.SuccessCount,
 			SolveRate:        100,
 		}
+		logrus.Infof("pageData => %+v", pageData)
+		logrus.Infof("pageData => %+v", user)
+		logrus.Infof("pageData => %+v", profileUser)
 		c.HTML(http.StatusOK, "profile", pageData)
 	})
 

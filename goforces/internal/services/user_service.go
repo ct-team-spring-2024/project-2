@@ -51,7 +51,6 @@ func RegisterUser(u models.User) (int, error) {
 		return -1, errors.New("user already exists")
 	}
 	// TODO: hash the password
-	u.Role = "user"
 	id, err := db.DB.CreateUser(u)
 	if err != nil {
 		logrus.Errorf("Cannot register user %v", err)
@@ -122,6 +121,7 @@ func GetUserByUsername(username string) (models.User, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()
 	for _, user := range db.DB.GetUsers() {
+		logrus.Infof("AHHHH %+v", user)
 		if user.Username == username {
 			return user, nil
 		}

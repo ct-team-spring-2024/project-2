@@ -32,20 +32,20 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(10) CHECK (role IN ('admin', 'user')) NOT NULL  -- Role must be 'admin' or 'user'
 );
 
-INSERT INTO users (username, email, password, role)
-VALUES (
-    'adminuser',
-    'admin@example.com',
-    'hashedpassword123',  -- In real apps, use a real hash!
-    'admin'
-)
-ON CONFLICT (email) DO NOTHING;
+-- INSERT INTO users (username, email, password, role)
+-- VALUES (
+--     'adminuser',
+--     'admin@example.com',
+--     'hashedpassword123',  -- In real apps, use a real hash!
+--     'admin'
+-- )
+-- ON CONFLICT (email) DO NOTHING;
 
-INSERT INTO submissions (user_id, problem_id, code, status)
-VALUES (
-    1,  -- assuming user with ID 1 exists
-    101,  -- example problem ID
-    'print("Hello, world!")',  -- sample code
-    'Accepted'  -- submission status
-)
-ON CONFLICT DO NOTHING;
+-- INSERT INTO submissions (user_id, problem_id, code, status)
+-- VALUES (
+--     1,  -- assuming user with ID 1 exists
+--     101,  -- example problem ID
+--     'print("Hello, world!")',  -- sample code
+--     'Accepted'  -- submission status
+-- )
+-- ON CONFLICT DO NOTHING;
